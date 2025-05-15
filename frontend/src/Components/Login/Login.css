@@ -1,0 +1,288 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+}
+
+.login-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f5f7fa;
+}
+
+.login-left-panel {
+    flex: 1;
+    background: linear-gradient(135deg, #3a7bd5, #00d2ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.login-left-panel::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(45deg);
+    top: -50%;
+    left: -50%;
+}
+
+.login-welcome {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    max-width: 500px;
+}
+
+.login-welcome h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.login-welcome p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.login-right-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.login-form-container {
+    width: 100%;
+    max-width: 450px;
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.login-logo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.login-logo img {
+    max-width: 80px;
+    margin-bottom: 15px;
+}
+
+.login-logo h2 {
+    font-size: 1.8rem;
+    color: #333;
+    font-weight: 500;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    /* Giảm margin xuống một chút vì không còn label */
+}
+
+.input-with-icon {
+    position: relative;
+    margin-top: 5px;
+    /* Thêm margin-top để tạo khoảng cách với các phần tử khác */
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+}
+
+.input-with-icon input {
+    width: 100%;
+    padding: 16px 16px 16px 45px;
+    /* Tăng padding lên một chút để input cao hơn */
+    border: 1px solid #e1e5eb;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.input-with-icon input::placeholder {
+    color: #aaa;
+    /* Màu cho placeholder rõ ràng hơn */
+}
+
+.input-with-icon input:focus {
+    border-color: #3a7bd5;
+    box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.15);
+    outline: none;
+}
+
+.toggle-password {
+    background: none;
+    border: none;
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #888;
+}
+
+.form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    font-size: 14px;
+}
+
+.remember-me {
+    display: flex;
+    align-items: center;
+}
+
+.remember-me input {
+    margin-right: 8px;
+    accent-color: #3a7bd5;
+}
+
+.forgot-password {
+    color: #3a7bd5;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.forgot-password:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.login-button {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(to right, #3a7bd5, #00d2ff);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(58, 123, 213, 0.25);
+}
+
+.login-button:hover {
+    background: linear-gradient(to right, #2e6bc0, #00bfe8);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(58, 123, 213, 0.3);
+}
+
+.demo-button {
+    width: 100%;
+    padding: 12px;
+    background: #95a5a6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+}
+
+.demo-button:hover {
+    background: #7f8c8d;
+}
+
+.register-option {
+    text-align: center;
+    color: #666;
+}
+
+.register-option a {
+    color: #3a7bd5;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.register-option a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.error {
+    color: #e74c3c;
+    margin-bottom: 16px;
+    text-align: center;
+    background-color: rgba(231, 76, 60, 0.1);
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.link-button {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #3a7bd5;
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: inherit;
+}
+
+.link-button:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.forgot-password-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #3a7bd5;
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: inherit;
+}
+
+.forgot-password-btn:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 992px) {
+    .login-container {
+        flex-direction: column;
+    }
+
+    .login-left-panel {
+        display: none;
+    }
+
+    .login-right-panel {
+        padding: 20px;
+    }
+
+    .login-form-container {
+        padding: 25px;
+    }
+}
