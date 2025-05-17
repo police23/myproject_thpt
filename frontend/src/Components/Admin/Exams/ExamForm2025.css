@@ -269,57 +269,139 @@
 /* Cải thiện structure-row */
 .structure-row {
     display: flex;
-    gap: 10px;
-    margin-bottom: 12px;
     align-items: center;
-    background: #f8fafd;
-    padding: 14px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    transition: all 0.2s ease;
+    margin-bottom: 10px;
+    gap: 2px;
+    padding: 0 1px;
 }
 
-.structure-row:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
+/* CSS mới cho structure header và rows */
+.structure-header {
+    display: flex !important;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #475569;
+    gap: 6px !important; /* Tăng khoảng cách giữa các cột */
+    padding: 0 1px;
+}
+.structure-header div:nth-child(1) { width: 110px !important; text-align: center; }
+.structure-header div:nth-child(2) { width: 110px !important; text-align: center; }
+.structure-header div:nth-child(3) { width: 125px !important; text-align: center; }
+.structure-header div:nth-child(4) { width: 125px !important; text-align: center; }
+.structure-header div:nth-child(5) { width: calc(100% - 530px) !important; text-align: center; }
+.structure-header div:nth-child(6) { width: 60px !important; text-align: center; }
+
+/* Điều chỉnh độ rộng và căn chỉnh từng cột */
+.structure-header div:nth-child(1) { 
+    width: 18%; 
+    text-align: center; 
+    padding-left: 5px;
+    padding-right: 5px;
+}
+.structure-header div:nth-child(2) { 
+    width: 18%; 
+    text-align: center;
+}
+.structure-header div:nth-child(3) { 
+    width: 18%; 
+    text-align: center;
+}
+.structure-header div:nth-child(4) { 
+    width: 18%; 
+    text-align: center;
+}
+.structure-header div:nth-child(5) { 
+    width: 18%; 
+    text-align: center;
+    padding-left: 10px;
+}
+.structure-header div:nth-child(6) { 
+    width: 10%; 
+    text-align: center; 
 }
 
-.structure-row:last-child {
-    margin-bottom: 0;
+/* Đảm bảo structure rows có cùng gap và độ rộng như headers */
+.structure-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 6px !important;
+    padding: 0 1px;
 }
 
-.structure-row input,
-.structure-row select {
-    border-radius: 8px;
-    padding: 12px 14px;
+/* Điều chỉnh lại chiều rộng các field để khớp với header */
+.section-name-input {
+    width: 110px !important;
+    min-width: 110px !important;
+    text-align: center;
+    background-color: #f2f6ff;
+    padding: 8px 6px !important;
 }
 
-/* Nút thêm section */
+.section-num-input {
+    width: 110px !important;
+    min-width: 110px !important;
+    text-align: center;
+    padding: 8px 6px !important;
+}
+
+.section-pointsper-input {
+    width: 125px !important;
+    min-width: 125px !important;
+    text-align: center;
+    padding: 8px 6px !important;
+}
+
+.section-points-input {
+    width: 125px !important;
+    min-width: 125px !important;
+    text-align: center;
+    padding: 8px 6px !important;
+}
+
+/* Đảm bảo nút loại câu hỏi cũng được căn chỉnh đúng */
+.question-type-buttons {
+    width: calc(100% - 530px) !important;
+    display: flex;
+    gap: 6px !important;
+}
+
+/* Đảm bảo nút xóa cũng căn chỉnh đúng */
+.delete-button-container {
+    width: 60px !important;
+    display: flex;
+    justify-content: center;
+}
+
+.delete-structure-btn {
+    background: none;
+    border: none;
+    color: #f44336;
+    cursor: pointer;
+}
+
+.delete-structure-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
 .add-structure-btn {
     background: none;
-    border: 1.5px dashed #cbd5e1 !important;
-    border-radius: 12px !important;
-    padding: 12px !important;
+    border: 1px dashed #ccc;
+    border-radius: 4px;
+    padding: 8px 12px;
     width: 100%;
-    margin-top: 16px;
+    margin-top: 10px;
     cursor: pointer;
-    color: #4361ee !important;
+    color: #00b09b;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.25s ease;
-    font-weight: 500;
-}
-
-.add-structure-btn:hover {
-    background: rgba(67, 97, 238, 0.04);
-    border-color: #4361ee !important;
-    transform: translateY(-2px);
 }
 
 .add-structure-btn i {
     margin-right: 8px;
-    font-size: 14px;
 }
 
 .questions-list {
@@ -361,7 +443,7 @@
 }
 
 .question-section-tabs button.active {
-    background: linear-gradient(135deg, #4361ee 0%, #3a56d4 100%);
+    background: linear-gradient(135deg, #4361ee, #3a56d4 100%);
     color: #fff;
     box-shadow: 0 4px 10px rgba(67, 97, 238, 0.2);
 }
@@ -1069,6 +1151,20 @@
     .form-section {
         width: 100%;
     }
+
+    /* Responsive cho phần cấu trúc đề thi */
+    .structure-header div:nth-child(1),
+    .section-name-input { width: 90px !important; min-width: 90px !important; }
+    .structure-header div:nth-child(2),
+    .section-num-input { width: 90px !important; min-width: 90px !important; }
+    .structure-header div:nth-child(3),
+    .section-pointsper-input { width: 100px !important; min-width: 100px !important; }
+    .structure-header div:nth-child(4),
+    .section-points-input { width: 100px !important; min-width: 100px !important; }
+    .structure-header div:nth-child(5),
+    .question-type-buttons { width: calc(100% - 430px) !important; }
+    .structure-header div:nth-child(6),
+    .delete-button-container { width: 50px !important; }
 }
 
 @media (max-width: 600px) {
@@ -1096,4 +1192,91 @@
     .exam2025-form-body .form-right {
         padding: 16px;
     }
+
+    .structure-header {
+        font-size: 12px;
+        gap: 1px;
+        padding: 0;
+    }
+    .structure-header div,
+    .structure-row > * {
+        min-width: 0 !important;
+        font-size: 12px;
+    }
+    .structure-header div:nth-child(1),
+    .section-name-input { width: 14%; }
+    .structure-header div:nth-child(2),
+    .section-num-input { width: 14%; }
+    .structure-header div:nth-child(3),
+    .section-pointsper-input { width: 14%; }
+    .structure-header div:nth-child(4),
+    .section-points-input { width: 14%; }
+    .structure-header div:nth-child(5),
+    .question-type-buttons { width: 34%; }
+    .structure-header div:nth-child(6),
+    .delete-button-container { width: 10%; }
+    .structure-row {
+        gap: 1px;
+        padding: 0;
+    }
+    .section-name-input,
+    .section-num-input,
+    .section-pointsper-input,
+    .section-points-input {
+        padding: 6px 4px;
+        font-size: 12px;
+    }
+    .question-type-buttons {
+        gap: 2px;
+    }
+
+    .exam2025-form-header {
+        padding: 10px 6px;
+    }
+    .exam2025-form-header h2 {
+        font-size: 18px;
+    }
+    .exam2025-form-body {
+        padding: 6px 2px;
+        gap: 8px;
+    }
+    .form-section {
+        padding: 8px 2px;
+        border-radius: 8px;
+    }
+    .form-left-title h3 {
+        font-size: 15px;
+    }
+}
+
+/* Style for read-only input fields */
+.read-only-input {
+    background-color: #f2f6ff !important;
+    cursor: not-allowed !important;
+}
+
+/* Helper text styling */
+.helper-text {
+    color: #718096;
+    display: block;
+    margin-top: 4px;
+    font-size: 0.85em;
+}
+
+/* Error message styling */
+.error-message {
+    color: #ef4444;
+    margin-top: 8px;
+    text-align: center;
+    font-size: 14px;
+}
+
+/* Loading spinner container */
+.exam2025-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    font-size: 18px;
+    color: #4361ee;
 }

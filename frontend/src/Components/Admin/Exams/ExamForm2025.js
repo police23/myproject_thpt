@@ -31,10 +31,11 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
             date: '',
             status: 'public',
             duration: 90,
-            numQuestions: 40,
+            numQuestions: 0,
             structure: [
-                { section: 'Phần 1', num: 36, type: 'tracnghiem' },
-                { section: 'Phần 2', num: 4, type: 'tuluan' }
+                { section: 'Phần 1', num: '', points: '', pointsPerQuestion: '', type: 'tracnghiem' },
+                { section: 'Phần 2', num: '', points: '', pointsPerQuestion: '', type: 'dungsai' },
+                { section: 'Phần 3', num: '', points: '', pointsPerQuestion: '', type: 'tuluan' }
             ],
             note: '',
             questions: []
@@ -44,7 +45,10 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
 
     // Thêm hàm để tự động tính tổng số câu hỏi từ cấu trúc
     const calculateTotalQuestions = () => {
-        return form.structure.reduce((total, section) => total + parseInt(section.num || 0), 0);
+        return form.structure.reduce((total, section) => {
+            const num = parseInt(section.num) || 0;
+            return total + num;
+        }, 0);
     };
 
     // Tạo hàm tạo câu hỏi mới dựa trên loại
@@ -215,57 +219,29 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
     // Cập nhật handleStructureChange để tự động tạo/xóa câu hỏi
     const handleStructureChange = (idx, field, value) => {
         const newStructure = [...form.structure];
-        const oldType = newStructure[idx].type;
-        const oldNum = parseInt(newStructure[idx].num || 0);
+        let section = { ...newStructure[idx] };
+        section[field] = value;
 
-        // Cập nhật giá trị mới
-        newStructure[idx][field] = value;
+        // Tự động tính toán nếu có thể
+        const num = parseFloat(field === 'num' ? value : section.num) || 0;
+        const points = parseFloat(field === 'points' ? value : section.points) || 0;
+        const pointsPerQuestion = parseFloat(field === 'pointsPerQuestion' ? value : section.pointsPerQuestion) || 0;
 
-        // Nếu thay đổi số câu hỏi hoặc loại câu hỏi, cập nhật danh sách câu hỏi
-        if (field === 'num' || field === 'type') {
-            const newType = field === 'type' ? value : oldType;
-            const newNum = field === 'num' ? parseInt(value || 0) : oldNum;
-
-            // Lọc câu hỏi hiện tại theo loại để kiểm soát chính xác
-            let currentQuestions = form.questions.filter(q => q.type === oldType);
-            const otherQuestions = form.questions.filter(q => q.type !== oldType);
-
-            // Tính toán số câu hỏi cần thêm hoặc bớt
-            const diff = newNum - currentQuestions.length;
-
-            // Nếu thay đổi loại câu hỏi
-            if (field === 'type' && oldType !== newType) {
-                // Tạo danh sách câu hỏi mới với loại mới
-                currentQuestions = Array(newNum).fill().map(() => createNewQuestion(newType));
-            } else {
-                // Nếu tăng số câu hỏi, thêm câu hỏi mới
-                if (diff > 0) {
-                    const additionalQuestions = Array(diff).fill().map(() => createNewQuestion(oldType));
-                    currentQuestions = [...currentQuestions, ...additionalQuestions];
-                }
-                // Nếu giảm số câu hỏi, xóa bớt câu hỏi từ cuối
-                else if (diff < 0) {
-                    currentQuestions = currentQuestions.slice(0, newNum);
-                }
-            }
-
-            // Kết hợp câu hỏi đã được cập nhật với các câu hỏi khác loại
-            const updatedQuestions = [...otherQuestions, ...currentQuestions];
-
-            // Cập nhật state với cả cấu trúc mới và câu hỏi mới
-            setForm({
-                ...form,
-                structure: newStructure,
-                questions: updatedQuestions,
-                numQuestions: calculateTotalQuestions() + (field === 'num' ? diff : 0)
-            });
-        } else {
-            // Trường hợp thay đổi các field khác (như section), chỉ cập nhật cấu trúc
-            setForm({
-                ...form,
-                structure: newStructure
-            });
+        if (field === 'num' && points) {
+            section.pointsPerQuestion = num > 0 ? (points / num).toFixed(3) : '';
+        } else if (field === 'points' && num) {
+            section.pointsPerQuestion = num > 0 ? (value / num).toFixed(3) : '';
+        } else if (field === 'pointsPerQuestion' && num) {
+            section.points = (num * value).toFixed(3);
         }
+
+        newStructure[idx] = section;
+
+        setForm({
+            ...form,
+            structure: newStructure,
+            numQuestions: calculateTotalQuestions()
+        });
     };
 
     // Cũng cần cập nhật handleInitialQuestions để tạo số lượng câu hỏi ban đầu chính xác
@@ -536,7 +512,7 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
         try {
             if (isStandalone) {
                 console.log('ExamForm2025: Navigating back to exams list...');
-                // Consistent path that matches the nested route in AdminDashboard
+                // Use the more precise path to the exams management page
                 navigate('/admin/dashboard/exams');
             } else if (onClose) {
                 console.log('ExamForm2025: Calling onClose function...');
@@ -544,7 +520,7 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
             }
         } catch (err) {
             console.error("Navigation error:", err);
-            // Use consistent path as fallback
+            // Use the more precise path as fallback
             window.location.href = '/admin/dashboard/exams';
         }
     };
@@ -582,7 +558,7 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
                 setSubmitLoading(false);
                 if (isStandalone) {
                     console.log('ExamForm2025: Submit successful, navigating back to exams list...');
-                    // Use consistent path
+                    // Use the more precise path to the exams management page
                     navigate('/admin/dashboard/exams');
                 } else if (onSubmit) {
                     onSubmit(form);
@@ -625,10 +601,20 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
             <div className="exam2025-error">
                 <h3>Lỗi</h3>
                 <p>{error}</p>
-                <button onClick={() => navigate('/admin/dashboard/exams')}>Quay lại</button>
+                <button onClick={() => navigate('/admin/exams')}>Quay lại</button>
             </div>
         );
     }
+
+    // Thêm hàm định dạng số với dấu phẩy thập phân
+    const formatPointsValue = (value) => {
+        if (!value) return '';
+        // Chuyển đổi số thành chuỗi với dấu phẩy thay cho dấu chấm
+        return Number(value).toLocaleString('vi-VN', {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 3
+        });
+    };
 
     return (
         <div className={containerClass}>
@@ -706,7 +692,7 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
                                     disabled={true}
                                     style={{ backgroundColor: '#f2f6ff' }}
                                 />
-                                <small style={{ color: '#718096', display: 'block', marginTop: '4px' }}>
+                                <small className="helper-text">
                                     (Được tính tự động từ cấu trúc đề thi)
                                 </small>
                             </div>
@@ -721,40 +707,51 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
                                     fontWeight: '600',
                                     color: '#475569'
                                 }}>
-                                    <div style={{ width: '15%', textAlign: 'center' }}>Phần</div>
-                                    <div style={{ width: '30%', paddingLeft: '10px' }}>Số câu hỏi</div>
-                                    <div style={{ width: '35%', paddingLeft: '10px' }}>Loại câu hỏi</div>
-                                    <div style={{ width: '10%' }}></div>
+                                    <div>Phần</div>
+                                    <div>Số câu</div>
+                                    <div>Điểm/câu</div>
+                                    <div>Tổng điểm</div>
+                                    <div>Loại câu hỏi</div>
+                                    <div></div>
                                 </div>
-
                                 {form.structure.map((s, idx) => (
                                     <div className="structure-row" key={idx}>
                                         <input
                                             type="text"
                                             value={s.section}
                                             onChange={e => handleStructureChange(idx, 'section', e.target.value)}
-                                            placeholder="Tên phần"
-                                            style={{
-                                                width: '15%',
-                                                textAlign: 'center',
-                                                backgroundColor: '#f2f6ff'
-                                            }}
-                                            disabled={true}
+                                            className="section-name-input"
+                                            disabled
                                             required
                                         />
                                         <input
                                             type="number"
                                             min="1"
-                                            max="100"
                                             value={s.num}
                                             onChange={e => handleStructureChange(idx, 'num', e.target.value)}
-                                            placeholder="Số câu"
-                                            style={{ width: '30%' }}
+                                            className="section-num-input"
+                                            
                                             required
                                         />
-
-                                        {/* Thay thế select dropdown bằng các nút chọn loại câu hỏi */}
-                                        <div className="question-type-buttons" style={{ width: '35%', display: 'flex', gap: '8px' }}>
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.001"
+                                            value={s.pointsPerQuestion}
+                                            onChange={e => handleStructureChange(idx, 'pointsPerQuestion', e.target.value)}
+                                            className="section-pointsper-input"
+                                            
+                                            required
+                                        />
+                                        {/* Thay đổi input điểm thành read-only và định dạng với dấu phẩy */}
+                                        <input
+                                            type="text"
+                                            value={formatPointsValue(s.points)}
+                                            className="section-points-input read-only-input"
+                                            readOnly
+                                            title="Điểm được tính tự động từ Số câu × Điểm/câu"
+                                        />
+                                        <div className="question-type-buttons">
                                             <button
                                                 type="button"
                                                 className={`type-btn ${s.type === 'tracnghiem' ? 'active' : ''}`}
@@ -777,23 +774,16 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
                                                 Tự luận
                                             </button>
                                         </div>
-
-                                        <button
-                                            type="button"
-                                            className="delete-structure-btn"
-                                            onClick={() => handleDeleteStructure(idx)}
-                                            disabled={form.structure.length <= 1}
-                                            style={{
-                                                width: '10%',
-                                                background: 'none',
-                                                border: 'none',
-                                                color: '#f44336',
-                                                cursor: form.structure.length <= 1 ? 'not-allowed' : 'pointer',
-                                                opacity: form.structure.length <= 1 ? 0.5 : 1
-                                            }}
-                                        >
-                                            <i className="fas fa-trash"></i>
-                                        </button>
+                                        <div className="delete-button-container">
+                                            <button
+                                                type="button"
+                                                className="delete-structure-btn"
+                                                onClick={() => handleDeleteStructure(idx)}
+                                                disabled={form.structure.length <= 1}
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                                 <button
@@ -1086,7 +1076,7 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
                             </button>
                         </div>
                         {error && (
-                            <div style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{error}</div>
+                            <div className="error-message">{error}</div>
                         )}
                     </div>
                 </form>
