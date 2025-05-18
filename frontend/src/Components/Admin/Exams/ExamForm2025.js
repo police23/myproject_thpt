@@ -14,21 +14,37 @@ function SafeInlineMath({ math }) {
     }
 }
 
-// Add LaTeX preview component for options and answers
+// Improved LaTeX preview component
 function LaTeXPreview({ content }) {
     if (!content) return null;
     
     try {
-        // Check if the content contains LaTeX commands
-        const hasLaTeX = /\\[a-zA-Z]+|\\\(|\\\)|\\\[|\\\]|\\left|\\right|\\frac|\\sum|\\int|\\lim/.test(content);
+        // Improved detection of math content
+        const hasLaTeXCommands = /\\[a-zA-Z]+|\\[^a-zA-Z]|\{|\}|\^|_|\\left|\\right|\\frac|\\sqrt/.test(content);
+        const hasSimpleMath = /[a-zA-Z]['′]\s*\([a-zA-Z]\)/.test(content);
+        const hasInterval = /\[\s*\d+\s*;\s*([a-zA-Z]+|\d+)\/?\d*\s*\]/.test(content);
+        const hasFractions = /[a-zA-Z]+\/\d+/.test(content);
+        const hasDelimiters = /\$\$|\$|\\\(|\\\)|\\\[|\\\]/.test(content);
         
-        // If it has LaTeX and doesn't already have delimiters, wrap it
-        if (hasLaTeX && !content.includes('$')) {
-            return <InlineMath math={content} />;
+        // Process math notation without delimiters
+        if ((hasLaTeXCommands || hasSimpleMath || hasInterval || hasFractions) && !hasDelimiters) {
+            // Replace common math notations with proper LaTeX
+            let formatted = content;
+            
+            // Replace f' notation
+            formatted = formatted.replace(/([a-zA-Z])['′]\s*\(([a-zA-Z])\)/g, "$1^{\\prime}($2)");
+            
+            // Replace interval notation [0;pi/2]
+            formatted = formatted.replace(/\[\s*(\d+)\s*;\s*pi\/(\d+)\s*\]/g, "\\left[$1;\\frac{\\pi}{$2}\\right]");
+            
+            // Replace fractions like pi/6
+            formatted = formatted.replace(/pi\/(\d+)/g, "\\frac{\\pi}{$1}");
+            
+            return <InlineMath math={formatted} />;
         }
         
-        // If it already has $ delimiters, process mixed content
-        if (content.includes('$')) {
+        // Process delimited LaTeX
+        if (hasDelimiters) {
             const parts = content.split(/(\$.*?\$)/g);
             return (
                 <>
@@ -43,7 +59,7 @@ function LaTeXPreview({ content }) {
             );
         }
         
-        // Plain text
+        // Plain text without math content
         return <span>{content}</span>;
     } catch (err) {
         console.error("LaTeX rendering error:", err);
@@ -1050,38 +1066,31 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
                                                         checked={q.answer === oidx}
                                                         onChange={() => handleQuestionChange(form.questions.indexOf(q), 'answer', oidx)}
                                                     />
-                                                    <div className="option-content">
-                                                        <input
-                                                            type="text"
-                                                            className="option-input"
-                                                            placeholder={`Đáp án ${String.fromCharCode(65 + oidx)} (có thể dùng LaTeX)`}
-                                                            value={opt}
-                                                            onChange={e => {
-                                                                const newOpts = [...q.options];
-                                                                newOpts[oidx] = e.target.value;
-                                                                handleQuestionChange(form.questions.indexOf(q), 'options', newOpts);
-                                                            }}
-                                                            required
-                                                        />
-                                                        <div className="option-image-upload">
-                                                            <label className="option-image-btn" title="Thêm hình ảnh cho đáp án">
-                                                                <i className="fas fa-image"></i>
-                                                                <input
-                                                                    type="file"
-                                                                    accept="image/*"
-                                                                    onChange={(e) => handleOptionImageUpload(form.questions.indexOf(q), oidx, e)}
-                                                                    style={{ display: 'none' }}
-                                                                />
-                                                            </label>
-                                                        </div>
+                                                    <input
+                                                        type="text"
+                                                        className="option-input"
+                                                        placeholder={`Đáp án ${String.fromCharCode(65 + oidx)} (có thể dùng LaTeX)`}
+                                                        value={opt}
+                                                        onChange={e => {
+                                                            const newOpts = [...q.options];
+                                                            newOpts[oidx] = e.target.value;
+                                                            handleQuestionChange(form.questions.indexOf(q), 'options', newOpts);
+                                                        }}
+                                                        required
+                                                    />
+                                                    {/* Đưa icon hình ảnh sát bên phải input đáp án */}
+                                                    <div className="option-image-upload">
+                                                        <label className="option-image-btn" title="Thêm hình ảnh cho đáp án">
+                                                            <i className="fas fa-image"></i>
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                onChange={(e) => handleOptionImageUpload(form.questions.indexOf(q), oidx, e)}
+                                                                style={{ display: 'none' }}
+                                                            />
+                                                        </label>
                                                     </div>
-                                                    {/* LaTeX preview for option */}
-                                                    {opt && (
-                                                        <div className="latex-preview">
-                                                            <LaTeXPreview content={opt} />
-                                                        </div>
-                                                    )}
-                                                    {/* Option image preview */}
+                                                    {/* Hiển thị ảnh xem trước nếu có */}
                                                     {q.optionImagePreviews && q.optionImagePreviews[oidx] && (
                                                         <div className="option-image-preview-container">
                                                             <img
@@ -1146,7 +1155,7 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
                                                 <input
                                                     type="text"
                                                     className="tuluan-answer"
-                                                    placeholder="Đáp án mẫu (có thể dùng LaTeX, ví dụ: \\sqrt{3} + \\frac{\\pi}{6})"
+                                                    placeholder="Đáp án mẫu (có thể dùng LaTeX hoặc nhập đơn giản như pi/6, f'(x))"
                                                     value={q.answer}
                                                     onChange={e => handleQuestionChange(form.questions.indexOf(q), 'answer', e.target.value)}
                                                 />
@@ -1162,7 +1171,18 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
                                                     </label>
                                                 </div>
                                             </div>
-                                            <small style={{ color: '#4361ee' }}>Bạn có thể nhập công thức LaTeX, ví dụ: <b>\\sqrt&#123;3&#125; + \\frac&#123;\\pi&#125;&#123;6&#125;</b></small>
+                                            
+                                            {/* LaTeX preview cho câu trả lời */}
+                                            {q.answer && (
+                                                <div className="latex-preview">
+                                                    <LaTeXPreview content={q.answer} />
+                                                </div>
+                                            )}
+                                            
+                                            <small style={{ color: '#4361ee' }}>
+                                                Bạn có thể nhập đơn giản như <b>pi/6</b> hoặc <b>f'(x)</b> thay vì dùng cú pháp LaTeX đầy đủ
+                                            </small>
+                                            
                                             {q.answerImagePreview && (
                                                 <div className="answer-image-preview-container">
                                                     <img

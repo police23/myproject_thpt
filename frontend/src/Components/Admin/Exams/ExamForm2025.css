@@ -678,39 +678,12 @@
     background: #fff;
     padding: 8px 12px;
     border-radius: 8px;
-    border: 1px solid #e2e8f0;
+    border: 1.5px solid #e2e8f0;
     transition: all 0.25s ease;
 }
 
-.option-row:hover {
-    border-color: #cbd5e1;
-    box-shadow: 0 2px 8px rgba(67, 97, 238, 0.04);
-}
-
-.option-row input[type="radio"] {
-    accent-color: #4361ee;
-    width: 18px;
-    height: 18px;
-}
-
-.option-content {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-}
-
-.option-content {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
-
-.option-content .latex-preview {
-    width: 100%;
-}
-
-.option-input {
+/* Đảm bảo input đáp án và icon hình ảnh nằm cùng hàng */
+.option-row .option-input {
     flex: 1;
     min-width: 0;
     width: 100%;
@@ -722,62 +695,47 @@
     transition: all 0.25s ease;
 }
 
-.option-input:focus {
-    border: 1.5px solid #4361ee;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.12);
+/* Đưa icon hình ảnh sát bên phải input đáp án */
+.option-image-upload {
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
 }
 
-.question-tuluan {
-    background: #f8fafd;
-    padding: 16px;
-    border-radius: 10px;
-    border: 1px dashed #cbd5e1;
+/* Hiển thị ảnh xem trước nếu có, nằm bên phải icon hình ảnh */
+.option-image-preview-container {
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    position: relative;
 }
 
-.tuluan-answer {
-    width: 100%;
-    border-radius: 8px;
-    border: 1.5px solid #e2e8f0;
-    padding: 12px 16px;
-    font-size: 15px;
-    background: #fff;
-    transition: all 0.25s ease;
+.option-image-preview {
+    max-width: 100px;
+    max-height: 60px;
+    border-radius: 6px;
+    margin-right: 4px;
 }
 
-.tuluan-answer:focus {
-    border: 1.5px solid #4361ee;
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.12);
-}
-
-.add-q-btn {
-    margin-top: 16px;
-    background: linear-gradient(135deg, #4361ee 0%, #3a56d4 100%);
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    padding: 14px 24px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
+.remove-option-image-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.8);
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    transition: all 0.25s ease;
-    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.18);
-    width: auto;
-    margin-left: auto;
-    margin-right: auto;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    z-index: 2;
 }
 
-.add-q-btn:hover {
-    background: linear-gradient(135deg, #3a56d4 0%, #2747b0 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(67, 97, 238, 0.25);
-}
-
+/* ...existing code... */
 .exam2025-standalone-container {
     padding: 20px;
     max-width: 1200px;
@@ -1293,42 +1251,50 @@
 
 /* Add styles for LaTeX preview */
 .latex-preview {
-    margin-top: 8px;
-    padding: 8px;
-    background-color: #f0f7ff;
+    margin-top: 10px;
+    padding: 10px 14px;
+    background-color: #f8fafd;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    font-size: 0.9em;
-    white-space: normal;
-    word-break: break-word;
-    max-width: 100%;
-    overflow: auto;
-    line-height: 1.5;
+    font-size: 1.1em;
+    line-height: 1.6;
 }
 
 .katex {
-    font-size: 1.1em !important; /* Make LaTeX a bit larger for readability */
+    font-size: 1.2em !important;
 }
 
-.katex-error {
-    color: red;
-    background-color: #ffeeee;
+/* Add styles for LaTeX hints */
+.latex-hints {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-radius: 8px;
+}
+
+.latex-hints h4 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #0369a1;
+    font-size: 15px;
+}
+
+.latex-hints ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.latex-hints li {
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: #0c4a6e;
+}
+
+.latex-hints code {
+    background-color: #e0f2fe;
     padding: 2px 4px;
     border-radius: 4px;
     font-family: monospace;
-    font-size: 0.9em;
-}
-
-/* Improved styling for LaTeX in tuluan answer */
-.question-tuluan .latex-preview {
-    background-color: #f0f8ff;
-    border-color: #bde0fe;
-}
-
-/* Even more space for answering essay questions */
-.tuluan-answer {
-    width: 100%;
-    padding: 10px 14px;
-    min-height: 100px;
-    resize: vertical;
+    font-size: 12px;
 }

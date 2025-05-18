@@ -4,22 +4,40 @@ import './ExamPreview.css';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 
-// Hàm hỗ trợ xử lý chuỗi chứa công thức LaTeX
+// Hàm hỗ trợ xử lý chuỗi chứa công thức LaTeX - Cải tiến
 function renderMixedContent(content) {
     if (!content) return null;
     
-    // Improve LaTeX detection with better regex
-    const hasLaTeXCommands = /\\[a-zA-Z]+|\\\(|\\\)|\\\[|\\\]|\\left|\\right|\\frac|\\sum|\\int|\\lim/.test(content);
+    // Improve LaTeX detection with broader regex
+    const hasLaTeXCommands = /\\[a-zA-Z]+|\\[^a-zA-Z]|\{|\}|\^|_|\\left|\\right|\\frac|\\sqrt/.test(content);
     
     // Check if already enclosed in LaTeX delimiters
     const hasDelimiters = /\$\$|\$|\\\(|\\\)|\\\[|\\\]/.test(content);
     
-    // If string contains LaTeX commands but no delimiters, wrap it in math environment
-    if (hasLaTeXCommands && !hasDelimiters) {
+    // Special case for plain notation like f'(x)=0
+    const hasSimpleMath = /[a-zA-Z]['′]\s*\([a-zA-Z]\)/.test(content);
+    
+    // Format interval notations like [0;pi/2]
+    const hasInterval = /\[\s*\d+\s*;\s*([a-zA-Z]+|\d+)\/?\d*\s*\]/.test(content);
+    
+    // Format fractions like pi/2 or pi/6
+    const hasFractions = /[a-zA-Z]+\/\d+/.test(content);
+    
+    // If content has any math notation but no LaTeX delimiters, wrap the entire string
+    if ((hasLaTeXCommands || hasSimpleMath || hasInterval || hasFractions) && !hasDelimiters) {
+        // Replace f' notation with f^{\prime} for better rendering
+        let formatted = content.replace(/([a-zA-Z])['′]\s*\(([a-zA-Z])\)/g, "$1^{\\prime}($2)");
+        
+        // Replace [0;pi/2] with \left[0;\frac{\pi}{2}\right]
+        formatted = formatted.replace(/\[\s*(\d+)\s*;\s*pi\/(\d+)\s*\]/g, "\\left[$1;\\frac{\\pi}{$2}\\right]");
+        
+        // Replace pi/6 with \frac{\pi}{6}
+        formatted = formatted.replace(/pi\/(\d+)/g, "\\frac{\\pi}{$1}");
+        
         try {
-            return <InlineMath math={content} />;
+            return <InlineMath math={formatted} />;
         } catch (error) {
-            console.error("Error rendering LaTeX:", error);
+            console.error("Error rendering LaTeX:", error, "Original content:", content);
             return <span>{content}</span>;
         }
     }
