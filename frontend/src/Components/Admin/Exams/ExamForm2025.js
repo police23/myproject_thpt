@@ -14,6 +14,43 @@ function SafeInlineMath({ math }) {
     }
 }
 
+// Add LaTeX preview component for options and answers
+function LaTeXPreview({ content }) {
+    if (!content) return null;
+    
+    try {
+        // Check if the content contains LaTeX commands
+        const hasLaTeX = /\\[a-zA-Z]+|\\\(|\\\)|\\\[|\\\]|\\left|\\right|\\frac|\\sum|\\int|\\lim/.test(content);
+        
+        // If it has LaTeX and doesn't already have delimiters, wrap it
+        if (hasLaTeX && !content.includes('$')) {
+            return <InlineMath math={content} />;
+        }
+        
+        // If it already has $ delimiters, process mixed content
+        if (content.includes('$')) {
+            const parts = content.split(/(\$.*?\$)/g);
+            return (
+                <>
+                    {parts.map((part, index) => {
+                        if (part.startsWith('$') && part.endsWith('$')) {
+                            const formula = part.substring(1, part.length - 1);
+                            return <InlineMath key={index} math={formula} />;
+                        }
+                        return <span key={index}>{part}</span>;
+                    })}
+                </>
+            );
+        }
+        
+        // Plain text
+        return <span>{content}</span>;
+    } catch (err) {
+        console.error("LaTeX rendering error:", err);
+        return <span>{content}</span>;
+    }
+}
+
 function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) {
     const navigate = useNavigate();
     const { id } = useParams();
@@ -99,103 +136,138 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
         setIsLoading(true);
         setError(null);
         try {
+            console.log(`Đang tải dữ liệu đề thi với ID: ${testId}`);
+            
             const response = await fetch(`http://localhost:5000/api/tests/${testId}`);
             const data = await response.json();
-
+            
             if (!data.success) {
-                throw new Error(data.message || 'Failed to load test data');
+                throw new Error(data.message || 'Không thể tải dữ liệu đề thi');
             }
-
+            
             const test = data.test;
-
+            
+            if (!test) {
+                throw new Error('Đề thi không tồn tại hoặc dữ liệu trả về không hợp lệ');
+            }
+            
+            console.log('Test data loaded:', test);
+            console.log(`Test has ${test.sections?.length || 0} sections`);
+            
+            // Count total questions from sections
+            let totalSectionQuestions = 0;
+            if (test.sections && Array.isArray(test.sections)) {
+                test.sections.forEach(section => {
+                    if (section.questions && Array.isArray(section.questions)) {
+                        totalSectionQuestions += section.questions.length;
+                        console.log(`Section ${section.title}: ${section.questions.length} questions`);
+                    }
+                });
+            }
+            console.log(`Total questions in test: ${totalSectionQuestions}`);
+            
             // Format test data to match form structure
             const formattedStructure = [];
             const formattedQuestions = [];
-
+            
             // Process sections and questions
-            test.sections.forEach(section => {
-                // Add section to structure
-                formattedStructure.push({
-                    section: section.title,
-                    num: section.num,
-                    type: section.type
-                });
-
-                // Process questions in this section
-                section.questions.forEach(q => {
-                    let formattedQuestion;
-
-                    switch (q.type) {
-                        case 'tracnghiem':
-                            formattedQuestion = {
-                                type: 'tracnghiem',
-                                content: q.question,
-                                options: q.options || ['', '', '', ''],
-                                answer: parseInt(q.correct_answer) || 0,
-                                hasImage: q.hasImage || false,
-                                image: null,
-                                imagePreview: q.image || null,
-                                optionImages: q.optionImages || [null, null, null, null],
-                                optionImagePreviews: q.optionImages || [null, null, null, null]
-                            };
-                            break;
-
-                        case 'dungsai':
-                            formattedQuestion = {
-                                type: 'dungsai',
-                                content: q.question,
-                                options: q.options || ['', '', '', ''],
-                                answers: q.answers || [false, false, false, false],
-                                hasImage: q.hasImage || false,
-                                image: null,
-                                imagePreview: q.image || null,
-                                optionImages: q.optionImages || [null, null, null, null],
-                                optionImagePreviews: q.optionImages || [null, null, null, null]
-                            };
-                            break;
-
-                        case 'tuluan':
-                            formattedQuestion = {
-                                type: 'tuluan',
-                                content: q.question,
-                                answer: q.correct_answer || '',
-                                hasImage: q.hasImage || false,
-                                image: null,
-                                imagePreview: q.image || null,
-                                answerImage: null,
-                                answerImagePreview: q.answerImage || null
-                            };
-                            break;
-
-                        default:
-                            formattedQuestion = createNewQuestion('tracnghiem');
+            if (test.sections && Array.isArray(test.sections)) {
+                test.sections.forEach(section => {
+                    if (!section) return;
+                    
+                    // Format structure
+                    formattedStructure.push({
+                        section: section.title || `Phần ${formattedStructure.length + 1}`,
+                        num: section.num || 0,
+                        type: section.type || 'tracnghiem',
+                        points: section.points?.toFixed(3) || '0.000',
+                        pointsPerQuestion: section.pointsPerQuestion?.toFixed(3) || '0.000'
+                    });
+                    
+                    // Process questions in this section
+                    if (section.questions && Array.isArray(section.questions)) {
+                        section.questions.forEach(q => {
+                            if (!q) return;
+                            
+                            let formattedQuestion;
+                            
+                            // Create formatted question based on type
+                            switch (q.type) {
+                                case 'tracnghiem':
+                                    formattedQuestion = {
+                                        type: 'tracnghiem',
+                                        content: q.question || '',
+                                        options: Array.isArray(q.options) ? q.options : ['', '', '', ''],
+                                        answer: parseInt(q.correct_answer) || 0,
+                                        hasImage: q.hasImage || false,
+                                        image: null,
+                                        imagePreview: q.image || null,
+                                        optionImages: Array.isArray(q.optionImages) ? new Array(4).fill(null).map((_, i) => q.optionImages[i] || null) : [null, null, null, null],
+                                        optionImagePreviews: Array.isArray(q.optionImages) ? new Array(4).fill(null).map((_, i) => q.optionImages[i] || null) : [null, null, null, null]
+                                    };
+                                    break;
+                                    
+                                case 'dungsai':
+                                    formattedQuestion = {
+                                        type: 'dungsai',
+                                        content: q.question || '',
+                                        options: Array.isArray(q.options) ? q.options : ['', '', '', ''],
+                                        answers: Array.isArray(q.answers) ? q.answers : [false, false, false, false],
+                                        hasImage: q.hasImage || false,
+                                        image: null,
+                                        imagePreview: q.image || null,
+                                        optionImages: Array.isArray(q.optionImages) ? new Array(4).fill(null).map((_, i) => q.optionImages[i] || null) : [null, null, null, null],
+                                        optionImagePreviews: Array.isArray(q.optionImages) ? new Array(4).fill(null).map((_, i) => q.optionImages[i] || null) : [null, null, null, null]
+                                    };
+                                    break;
+                                    
+                                case 'tuluan':
+                                    formattedQuestion = {
+                                        type: 'tuluan',
+                                        content: q.question || '',
+                                        answer: q.correct_answer || '',
+                                        hasImage: q.hasImage || false,
+                                        image: null,
+                                        imagePreview: q.image || null,
+                                        answerImage: null,
+                                        answerImagePreview: q.answerImage || null
+                                    };
+                                    break;
+                                    
+                                default:
+                                    formattedQuestion = createNewQuestion('tracnghiem');
+                            }
+                            
+                            formattedQuestions.push(formattedQuestion);
+                        });
                     }
-
-                    formattedQuestions.push(formattedQuestion);
                 });
-            });
-
-            // Update form state with loaded data
+            }
+            
+            console.log(`Formatted ${formattedQuestions.length} questions from ${formattedStructure.length} sections`);
+            
+            // Update form with loaded data
             setForm({
-                name: test.title,
-                subject: test.subject,
-                duration: test.duration,
-                status: test.status,
+                name: test.title || '',
+                subject: test.subject || '',
+                duration: test.duration || 90,
+                status: test.status || 'draft',
                 note: test.note || '',
-                numQuestions: test.numQuestions,
+                numQuestions: formattedQuestions.length,
                 structure: formattedStructure,
                 questions: formattedQuestions
             });
-
-            // Set active section based on first available question type
-            if (formattedQuestions.length > 0) {
-                setActiveSection(formattedQuestions[0].type);
+            
+            // Set active section based on first available type
+            const types = [...new Set(formattedQuestions.map(q => q.type))];
+            if (types.length > 0) {
+                setActiveSection(types[0]);
             }
-
+            
             setIsLoading(false);
         } catch (err) {
             console.error("Error fetching test data:", err);
-            setError("Không thể tải dữ liệu đề thi. Vui lòng thử lại sau.");
+            setError(`Không thể tải dữ liệu đề thi: ${err.message}`);
             setIsLoading(false);
         }
     };
@@ -216,7 +288,7 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
         setForm({ ...form, [name]: value });
     };
 
-    // Cập nhật handleStructureChange để tự động tạo/xóa câu hỏi
+    // Cập nhật handleStructureChange để tự động tạo/xóa câu hỏi cho đúng số lượng và loại
     const handleStructureChange = (idx, field, value) => {
         const newStructure = [...form.structure];
         let section = { ...newStructure[idx] };
@@ -237,10 +309,45 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
 
         newStructure[idx] = section;
 
+        // Đồng bộ số lượng câu hỏi với cấu trúc
+        // 1. Xác định vị trí các câu hỏi thuộc phần này
+        let questions = [...form.questions];
+        // Tính tổng số câu của các phần trước
+        let prevCount = 0;
+        for (let i = 0; i < idx; i++) {
+            prevCount += parseInt(newStructure[i].num || 0);
+        }
+        const oldNum = parseInt(form.structure[idx].num || 0);
+        const newNum = parseInt(section.num || 0);
+        const oldType = form.structure[idx].type;
+        const newType = section.type;
+
+        // 2. Xử lý thay đổi số lượng hoặc loại câu hỏi
+        // Nếu đổi loại, thay thế toàn bộ câu hỏi của phần này bằng loại mới
+        if (field === 'type' && oldType !== newType) {
+            // Xóa các câu hỏi cũ của phần này
+            questions.splice(prevCount, oldNum);
+            // Thêm lại đúng số lượng câu hỏi với loại mới
+            for (let i = 0; i < oldNum; i++) {
+                questions.splice(prevCount + i, 0, createNewQuestion(newType));
+            }
+        } else if (field === 'num') {
+            if (newNum > oldNum) {
+                // Thêm câu hỏi mới ở cuối phần này
+                for (let i = 0; i < newNum - oldNum; i++) {
+                    questions.splice(prevCount + oldNum + i, 0, createNewQuestion(section.type));
+                }
+            } else if (newNum < oldNum) {
+                // Xóa bớt câu hỏi ở cuối phần này
+                questions.splice(prevCount + newNum, oldNum - newNum);
+            }
+        }
+
         setForm({
             ...form,
             structure: newStructure,
-            numQuestions: calculateTotalQuestions()
+            questions,
+            numQuestions: newStructure.reduce((total, s) => total + (parseInt(s.num) || 0), 0)
         });
     };
 
@@ -537,10 +644,20 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
             duration: form.duration,
             status: form.status,
             note: form.note,
-            structure: form.structure,
+            structure: form.structure.map(section => ({
+                ...section,
+                // Đảm bảo chuyển đổi sang số
+                pointsPerQuestion: parseFloat(section.pointsPerQuestion) || 0,
+                points: parseFloat(section.points) || 0,
+                // Đảm bảo num luôn là số nguyên
+                num: parseInt(section.num) || 0
+            })),
             questions: form.questions
         };
 
+        // Console log để debug
+        console.log("Sending payload:", JSON.stringify(payload.structure));
+        
         try {
             // If it's an edit (we have an ID), use PUT instead of POST
             const method = id ? 'PUT' : 'POST';
@@ -958,6 +1075,13 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
                                                             </label>
                                                         </div>
                                                     </div>
+                                                    {/* LaTeX preview for option */}
+                                                    {opt && (
+                                                        <div className="latex-preview">
+                                                            <LaTeXPreview content={opt} />
+                                                        </div>
+                                                    )}
+                                                    {/* Option image preview */}
                                                     {q.optionImagePreviews && q.optionImagePreviews[oidx] && (
                                                         <div className="option-image-preview-container">
                                                             <img

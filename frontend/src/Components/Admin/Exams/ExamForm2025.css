@@ -700,6 +700,16 @@
     width: 100%;
 }
 
+.option-content {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.option-content .latex-preview {
+    width: 100%;
+}
+
 .option-input {
     flex: 1;
     min-width: 0;
@@ -1279,4 +1289,46 @@
     height: 200px;
     font-size: 18px;
     color: #4361ee;
+}
+
+/* Add styles for LaTeX preview */
+.latex-preview {
+    margin-top: 8px;
+    padding: 8px;
+    background-color: #f0f7ff;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.9em;
+    white-space: normal;
+    word-break: break-word;
+    max-width: 100%;
+    overflow: auto;
+    line-height: 1.5;
+}
+
+.katex {
+    font-size: 1.1em !important; /* Make LaTeX a bit larger for readability */
+}
+
+.katex-error {
+    color: red;
+    background-color: #ffeeee;
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+/* Improved styling for LaTeX in tuluan answer */
+.question-tuluan .latex-preview {
+    background-color: #f0f8ff;
+    border-color: #bde0fe;
+}
+
+/* Even more space for answering essay questions */
+.tuluan-answer {
+    width: 100%;
+    padding: 10px 14px;
+    min-height: 100px;
+    resize: vertical;
 }

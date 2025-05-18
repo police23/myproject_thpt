@@ -1,8 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './ExamPreview.css';
-import { InlineMath } from 'react-katex';
+import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
+
+// Hàm hỗ trợ xử lý chuỗi chứa công thức LaTeX
+function renderMixedContent(content) {
+    if (!content) return null;
+    
+    // Improve LaTeX detection with better regex
+    const hasLaTeXCommands = /\\[a-zA-Z]+|\\\(|\\\)|\\\[|\\\]|\\left|\\right|\\frac|\\sum|\\int|\\lim/.test(content);
+    
+    // Check if already enclosed in LaTeX delimiters
+    const hasDelimiters = /\$\$|\$|\\\(|\\\)|\\\[|\\\]/.test(content);
+    
+    // If string contains LaTeX commands but no delimiters, wrap it in math environment
+    if (hasLaTeXCommands && !hasDelimiters) {
+        try {
+            return <InlineMath math={content} />;
+        } catch (error) {
+            console.error("Error rendering LaTeX:", error);
+            return <span>{content}</span>;
+        }
+    }
+    
+    // If string doesn't contain $ or other LaTeX delimiters, render as plain text
+    if (!hasDelimiters) {
+        return <span>{content}</span>;
+    }
+    
+    // Split by LaTeX delimiters and render each part appropriately
+    const parts = content.split(/(\$.*?\$)/g);
+    return parts.map((part, index) => {
+        if (part.startsWith('$') && part.endsWith('$')) {
+            try {
+                // Extract LaTeX content between $ signs
+                const formula = part.substring(1, part.length - 1);
+                return <InlineMath key={index} math={formula} />;
+            } catch (error) {
+                console.error("Error rendering LaTeX formula:", error);
+                return <span key={index}>{part}</span>;
+            }
+        }
+        // Plain text part
+        return <span key={index}>{part}</span>;
+    });
+}
 
 const ExamPreview = () => {
     const { id } = useParams();
@@ -28,21 +71,52 @@ const ExamPreview = () => {
                     throw new Error(data.message || 'Không thể tải thông tin đề thi');
                 }
 
-                setExam(data.test);
+                if (!data.test) {
+                    throw new Error('Không tìm thấy đề thi hoặc dữ liệu trả về không hợp lệ');
+                }
 
+                // Kiểm tra dữ liệu test có đúng cấu trúc không
+                const test = data.test;
+                
+                // Kiểm tra trường sections tồn tại và là mảng
+                if (!test.sections || !Array.isArray(test.sections)) {
+                    console.error("Dữ liệu sections không hợp lệ:", test.sections);
+                    throw new Error('Cấu trúc đề thi không hợp lệ: thiếu phần sections');
+                }
+
+                setExam(test);
+                
                 // Set initial time based on exam duration
-                setTimeLeft(data.test.duration * 60);
+                setTimeLeft(test.duration * 60);
 
                 // Organize questions by type for the navigation panel
                 const qByType = {};
                 let questionIndex = 0;
 
-                data.test.sections.forEach(section => {
+                test.sections.forEach(section => {
+                    if (!section) {
+                        console.warn("Phát hiện section không hợp lệ");
+                        return; // Skip invalid section
+                    }
+
+                    if (!section.type) {
+                        console.warn("Section thiếu thông tin type:", section);
+                        return; // Skip section without type
+                    }
+
                     if (!qByType[section.type]) {
                         qByType[section.type] = [];
                     }
 
+                    // Kiểm tra questions trong section
+                    if (!section.questions || !Array.isArray(section.questions)) {
+                        console.warn(`Section ${section.title || 'không tên'} không có questions hợp lệ`);
+                        return;
+                    }
+
                     section.questions.forEach(question => {
+                        if (!question) return; // Skip null/undefined questions
+                        
                         qByType[section.type].push({
                             ...question,
                             globalIndex: questionIndex++
@@ -53,6 +127,7 @@ const ExamPreview = () => {
                 setQuestionsByType(qByType);
                 setLoading(false);
             } catch (error) {
+                console.error("Error fetching exam data:", error);
                 setError(error.message || 'Đã xảy ra lỗi khi tải đề thi');
                 setLoading(false);
             }
@@ -109,23 +184,29 @@ const ExamPreview = () => {
     };
 
     const getAllQuestions = () => {
-        if (!exam) return [];
+        if (!exam || !exam.sections || !Array.isArray(exam.sections)) return [];
 
         let allQuestions = [];
         exam.sections.forEach(section => {
-            allQuestions = [...allQuestions, ...section.questions];
+            if (section && section.questions && Array.isArray(section.questions)) {
+                allQuestions = [...allQuestions, ...section.questions];
+            }
         });
 
         return allQuestions;
     };
 
+    // Cập nhật renderCurrentQuestion để thêm kiểm tra
     const renderCurrentQuestion = () => {
         const questions = getAllQuestions();
-        if (questions.length === 0 || currentQuestion >= questions.length) {
+        if (!questions || questions.length === 0 || currentQuestion >= questions.length) {
             return <div>Không có câu hỏi</div>;
         }
 
         const q = questions[currentQuestion];
+        if (!q) {
+            return <div>Câu hỏi không hợp lệ</div>;
+        }
 
         return (
             <div className="exam-question">
@@ -134,26 +215,27 @@ const ExamPreview = () => {
                 </div>
 
                 <div className="question-content">
-                    <p>{q.question}</p>
+                    {/* Sử dụng hàm renderMixedContent thay vì SafeMathContent */}
+                    <p>{renderMixedContent(q.question)}</p>
                     {q.image && <img src={q.image} alt="Question illustration" className="question-image" />}
                 </div>
 
                 {q.type === 'tracnghiem' && (
                     <div className="question-options">
-                        {q.options && q.options.map((option, idx) => (
-                            <div className="option-row" key={idx}>
-                                <label className={`option-label ${answers[currentQuestion] === idx ? 'selected' : ''}`}>
+                        {q.options && q.options.map((opt, oidx) => (
+                            <div className="option-row" key={oidx}>
+                                <label className={`option-label ${answers[currentQuestion] === oidx ? 'selected' : ''}`}>
                                     <input
                                         type="radio"
                                         name={`question-${currentQuestion}`}
-                                        checked={answers[currentQuestion] === idx}
-                                        onChange={() => handleAnswerSelection(currentQuestion, idx)}
+                                        checked={answers[currentQuestion] === oidx}
+                                        onChange={() => handleAnswerSelection(currentQuestion, oidx)}
                                     />
                                     <span className="option-text">
-                                        {String.fromCharCode(65 + idx)}. {option}
+                                        {String.fromCharCode(65 + oidx)}. {renderMixedContent(opt)}
                                     </span>
-                                    {q.optionImages && q.optionImages[idx] && (
-                                        <img src={q.optionImages[idx]} alt={`Option ${String.fromCharCode(65 + idx)}`} className="option-image" />
+                                    {q.optionImages && q.optionImages[oidx] && (
+                                        <img src={q.optionImages[oidx]} alt={`Option ${String.fromCharCode(65 + oidx)}`} className="option-image" />
                                     )}
                                 </label>
                             </div>
@@ -166,7 +248,8 @@ const ExamPreview = () => {
                         {q.options && q.options.map((option, idx) => (
                             <div className="option-row" key={idx}>
                                 <div className="option-content">
-                                    <p>{String.fromCharCode(65 + idx)}. {option}</p>
+                                    {/* Sử dụng renderMixedContent cho phương án đúng sai */}
+                                    <p>{String.fromCharCode(65 + idx)}. {renderMixedContent(option)}</p>
                                 </div>
                                 <div className="true-false-buttons">
                                     <label className={`tf-label ${answers[`${currentQuestion}-${idx}`] === true ? 'selected' : ''}`}>

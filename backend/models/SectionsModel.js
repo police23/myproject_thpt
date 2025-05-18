@@ -1,11 +1,36 @@
 const mongoose = require('mongoose');
 
-const sectionSchema = new mongoose.Schema({
-    title: String, // E.g. "Phần 1"
-    type: { type: String, enum: ['tracnghiem', 'dungsai', 'tuluan'] }, // Match frontend types
-    num: { type: Number, default: 0 }, // Number of questions in this section
-    questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
-    test_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Test' },
+const SectionSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: true
+    },
+    type: {
+        type: String,
+        enum: ['tracnghiem', 'dungsai', 'tuluan'],
+        required: true
+    },
+    num: {
+        type: Number,
+        required: true
+    },
+    pointsPerQuestion: {
+        type: Number,
+        default: 0.5
+    },
+    points: {
+        type: Number,
+        default: 0
+    },
+    test_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Test'
+    },
+    questions: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Question'
+    }]
 });
 
-module.exports = mongoose.model('Section', sectionSchema);
+// Use this pattern to prevent the "OverwriteModelError"
+module.exports = mongoose.models.Section || mongoose.model('Section', SectionSchema);

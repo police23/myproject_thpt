@@ -2,6 +2,7 @@ const express = require('express');
 const connectDB = require('./config/db');
 require('dotenv').config();
 const mongoose = require('mongoose');
+const path = require('path');
 
 const app = express();
 const cors = require('cors');
@@ -10,12 +11,17 @@ connectDB(); // kết nối MongoDB
 
 app.use(express.json());
 
-// Đảm bảo require model trước controller
-const UserModel = require('./models/UsersModel');
-const Question = require('./models/QuestionsModel');
-const Test = require('./models/TestsModel');
-const Section = require('./models/SectionsModel');
+// Import models once at server initialization
+require('./models/Test');
+require('./models/SectionsModel');
+require('./models/QuestionsModel');
+
+// Import TestController
 const TestController = require('./controllers/TestController');
+
+// Import routes after models
+const authRoutes = require('./routes/auth');
+const testsRoutes = require('./routes/tests');
 
 // Test route để kiểm tra kết nối backend
 app.get('/api/ping', (req, res) => {
@@ -74,17 +80,27 @@ app.post('/api/add-test', TestController.createTest);
 // Route lấy danh sách đề thi
 app.get('/api/list-tests', TestController.getAllTests);
 
-// Mount route groups
-const authRoutes = require('./routes/auth');
-const testRoutes = require('./routes/tests');
-const userRoutes = require('./routes/users'); // Add this line
+// Middleware để debug request body
+app.use('/api/tests', (req, res, next) => {
+    if (req.method === 'POST' || req.method === 'PUT') {
+        console.log('Test API request body:', JSON.stringify(req.body));
+    }
+    next();
+});
 
+// Đăng ký middleware
+app.use(express.json());
+app.use(cors());
+
+// Đăng ký routes
 app.use('/api/auth', authRoutes);
-app.use('/api/tests', testRoutes);
-app.use('/api/users', userRoutes); // Add this line
+app.use('/api/tests', testsRoutes);
 
 // Add additional route for getting a single test by ID if not already included in testRoutes
 app.get('/api/tests/:id', TestController.getTestById);
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Middleware xử lý lỗi (luôn trả về JSON)
 app.use((err, req, res, next) => {

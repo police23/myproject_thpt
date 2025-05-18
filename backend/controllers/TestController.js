@@ -1,4 +1,4 @@
-const Test = require('../models/TestsModel');
+const Test = require('../models/Test');
 const Section = require('../models/SectionsModel');
 const Question = require('../models/QuestionsModel');
 const mongoose = require('mongoose');
@@ -13,41 +13,19 @@ const handleFileUpload = async (file) => {
 exports.createTest = async (req, res) => {
     try {
         const {
-            name, subject, duration, status, note,
-            structure, questions
+            name, subject, duration, status, note, structure, questions
         } = req.body;
 
-        // Log dữ liệu đầu vào để debug
-        console.log('Tạo đề thi - Dữ liệu nhận được:', {
-            name, subject, duration, status, note, structure, questions
-        });
-
-        // Kiểm tra dữ liệu đầu vào
-        if (
-            !name ||
-            !subject ||
-            !Array.isArray(structure) ||
-            structure.length === 0 ||
-            !Array.isArray(questions) ||
-            questions.length === 0
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: 'Thiếu hoặc sai định dạng thông tin đề thi (name, subject, structure[], questions[])'
-            });
-        }
-
-        // Create the test
+        // Create the test first
         const test = new Test({
             title: name,
             subject,
-            duration,
+            duration: parseInt(duration) || 90,
             status,
             note,
-            numQuestions: questions.length,
-            created_by: req.user ? req.user._id : null // Assuming user is available in request
+            numQuestions: questions.length
         });
-
+        
         await test.save();
 
         // Group questions by type
@@ -59,93 +37,69 @@ exports.createTest = async (req, res) => {
             questionsByType[q.type].push(q);
         });
 
-        // Create sections based on structure
-        for (const structureItem of structure) {
-            const { section: title, type, num } = structureItem;
-
-            const sectionQuestions = questionsByType[type] ?
-                questionsByType[type].splice(0, num) : [];
-
+        // Process each section in structure
+        for (const sectionData of structure) {
+            if (parseInt(sectionData.num) <= 0) continue;
+            
+            // Create a new section
             const newSection = new Section({
-                title,
-                type,
-                num,
-                test_id: test._id
+                title: sectionData.section,
+                type: sectionData.type,
+                num: parseInt(sectionData.num) || 0,
+                pointsPerQuestion: parseFloat(sectionData.pointsPerQuestion) || 0,
+                points: parseFloat(sectionData.points) || 0,
+                test_id: test._id // Important: Link section to test
             });
-
+            
             await newSection.save();
-
+            
+            // Get questions for this section type
+            const sectionQuestions = questionsByType[sectionData.type] || [];
+            const sectionQuestionCount = Math.min(parseInt(sectionData.num) || 0, sectionQuestions.length);
+            
             // Create questions for this section
-            for (const q of sectionQuestions) {
-                // Đảm bảo các trường là mảng
-                if (!Array.isArray(q.options)) q.options = [];
-                if (!Array.isArray(q.optionImages)) q.optionImages = [];
-                if (!Array.isArray(q.answers)) q.answers = [];
-
-                let imageUrl = null;
-                let optionImageUrls = [];
-                let answerImageUrl = null;
-
-                // Handle image uploads if applicable
-                if (q.hasImage && q.image) {
-                    imageUrl = await handleFileUpload(q.image);
-                }
-
-                if (q.type === 'tracnghiem' || q.type === 'dungsai') {
-                    if (q.optionImages) {
-                        for (const optImg of q.optionImages) {
-                            const imgUrl = optImg ? await handleFileUpload(optImg) : null;
-                            optionImageUrls.push(imgUrl);
-                        }
-                    }
-                }
-
-                if (q.type === 'tuluan' && q.answerImage) {
-                    answerImageUrl = await handleFileUpload(q.answerImage);
-                }
-
-                // Log dữ liệu từng câu hỏi trước khi lưu
-                console.log('Tạo câu hỏi:', {
+            for (let i = 0; i < sectionQuestionCount; i++) {
+                const q = sectionQuestions[i];
+                
+                const questionData = {
                     question: q.content,
                     type: q.type,
-                    options: q.options,
-                    answers: q.answers,
-                    correct_answer: q.answer,
-                });
-
-                // Create question based on type
-                const newQuestion = new Question({
-                    question: q.content,
-                    type: q.type,
-                    options: q.options,
                     section_id: newSection._id,
-                    hasImage: q.hasImage,
-                    image: imageUrl,
-                    optionImages: optionImageUrls,
-                });
-
-                // Set type-specific fields
+                    test_id: test._id, // Important: Link question to test
+                    hasImage: q.hasImage || false,
+                    image: q.imagePreview
+                };
+                
+                // Add type-specific fields
                 if (q.type === 'tracnghiem') {
-                    newQuestion.correct_answer = q.answer !== undefined ? q.answer.toString() : '';
+                    questionData.options = q.options || [];
+                    questionData.correct_answer = q.answer?.toString() || '0';
+                    questionData.optionImages = q.optionImagePreviews || [];
                 } else if (q.type === 'dungsai') {
-                    newQuestion.answers = q.answers;
+                    questionData.options = q.options || [];
+                    questionData.answers = q.answers || [false, false, false, false];
+                    questionData.optionImages = q.optionImagePreviews || [];
                 } else if (q.type === 'tuluan') {
-                    newQuestion.correct_answer = q.answer || '';
-                    newQuestion.answerImage = answerImageUrl;
+                    questionData.correct_answer = q.answer || '';
+                    questionData.answerImage = q.answerImagePreview;
                 }
-
+                
+                // Save the question
+                const newQuestion = new Question(questionData);
                 await newQuestion.save();
-
-                // Add question to section
+                
+                // Add to section's questions
                 newSection.questions.push(newQuestion._id);
             }
-
-            await newSection.save();
-
+            
+            // Update section with questions
+            await Section.findByIdAndUpdate(newSection._id, { questions: newSection.questions });
+            
             // Add section to test
             test.sections.push(newSection._id);
         }
-
+        
+        // Final save of test with section references
         await test.save();
 
         res.status(201).json({
@@ -155,8 +109,7 @@ exports.createTest = async (req, res) => {
         });
 
     } catch (error) {
-        // Log lỗi chi tiết hơn
-        console.error('Error creating test:', error, 'Body:', req.body);
+        console.error('Error creating test:', error);
         res.status(500).json({
             success: false,
             message: 'Đã xảy ra lỗi khi tạo đề thi',
@@ -187,44 +140,183 @@ exports.getAllTests = async (req, res) => {
     }
 };
 
+// Khi trả về dữ liệu đề thi, đảm bảo section có đầy đủ các trường và questions
 exports.getTestById = async (req, res) => {
     try {
+        console.log(`Looking up test with ID: ${req.params.id}`);
+        
+        // Find the test with populated sections
         const test = await Test.findById(req.params.id)
             .populate({
                 path: 'sections',
                 populate: {
-                    path: 'questions',
-                    model: 'Question'
+                    path: 'questions'
                 }
             });
 
         if (!test) {
-            return res.status(404).json({ success: false, message: 'Không tìm thấy đề thi' });
+            console.log(`Test with ID ${req.params.id} not found`);
+            return res.status(404).json({ success: false, message: 'Đề thi không tồn tại' });
         }
-
-        res.json({ success: true, test });
+        
+        console.log(`Found test: ${test.title} with ${test.sections.length} sections`);
+        
+        // Make sure all sections have valid questions array
+        if (test.sections) {
+            for (let i = 0; i < test.sections.length; i++) {
+                if (!test.sections[i].questions) {
+                    test.sections[i].questions = [];
+                }
+                
+                // If questions don't exist in this section, try to find them by section_id
+                if (test.sections[i].questions.length === 0) {
+                    const sectionQuestions = await Question.find({ section_id: test.sections[i]._id });
+                    test.sections[i].questions = sectionQuestions;
+                    console.log(`Found ${sectionQuestions.length} questions for section ${test.sections[i].title} by section_id`);
+                }
+            }
+        }
+        
+        return res.json({
+            success: true,
+            test: test
+        });
     } catch (error) {
-        console.error('Error getTestById:', error);
-        res.status(500).json({ success: false, message: 'Lỗi server', error: error.message });
+        console.error('Error fetching test by ID:', error);
+        return res.status(500).json({
+            success: false,
+            message: `Error fetching test: ${error.message}`
+        });
     }
 };
 
 exports.updateTest = async (req, res) => {
     try {
-        // Similar implementation to createTest but updating existing records
-        // This would involve updating the test, sections, and questions
+        const testId = req.params.id;
+        const { name, subject, duration, status, note, structure, questions } = req.body;
 
-        // For brevity, I'm not including the full implementation here
+        console.log('Updating test - Received data:', {
+            testId, name, subject, duration, status
+        });
+        console.log('Questions count:', questions.length);
+
+        const existingTest = await Test.findById(testId);
+        if (!existingTest) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy đề thi'
+            });
+        }
+
+        // First, get all existing section IDs to delete later
+        const oldSectionIds = [...existingTest.sections];
+        
+        // Clear sections from test
+        existingTest.sections = [];
+        
+        // Update test basic info
+        existingTest.title = name;
+        existingTest.subject = subject;
+        existingTest.duration = parseInt(duration) || 90;
+        existingTest.status = status;
+        existingTest.note = note;
+        existingTest.numQuestions = questions.length;
+        existingTest.updatedAt = new Date();
+        
+        // Save test to get reference
+        await existingTest.save();
+        
+        // Group questions by type
+        const questionsByType = {};
+        questions.forEach(q => {
+            if (!questionsByType[q.type]) {
+                questionsByType[q.type] = [];
+            }
+            questionsByType[q.type].push(q);
+        });
+        
+        // Create new sections and questions
+        for (const sectionData of structure) {
+            if (parseInt(sectionData.num) <= 0) continue;
+            
+            const newSection = new Section({
+                title: sectionData.section,
+                type: sectionData.type,
+                num: parseInt(sectionData.num) || 0,
+                pointsPerQuestion: parseFloat(sectionData.pointsPerQuestion) || 0,
+                points: parseFloat(sectionData.points) || 0,
+                test_id: existingTest._id // Important: Link section to test
+            });
+            
+            await newSection.save();
+            
+            // Get questions for this section type
+            const sectionQuestions = questionsByType[sectionData.type] || [];
+            const sectionQuestionCount = Math.min(parseInt(sectionData.num) || 0, sectionQuestions.length);
+            
+            // Create questions for this section
+            for (let i = 0; i < sectionQuestionCount; i++) {
+                const q = sectionQuestions[i];
+                
+                const questionData = {
+                    question: q.content,
+                    type: q.type,
+                    section_id: newSection._id,
+                    test_id: existingTest._id, // Important: Link question to test
+                    hasImage: q.hasImage || false,
+                    image: q.imagePreview
+                };
+                
+                // Add type-specific fields
+                if (q.type === 'tracnghiem') {
+                    questionData.options = q.options || [];
+                    questionData.correct_answer = q.answer?.toString() || '0';
+                    questionData.optionImages = q.optionImagePreviews || [];
+                } else if (q.type === 'dungsai') {
+                    questionData.options = q.options || [];
+                    questionData.answers = q.answers || [false, false, false, false];
+                    questionData.optionImages = q.optionImagePreviews || [];
+                } else if (q.type === 'tuluan') {
+                    questionData.correct_answer = q.answer || '';
+                    questionData.answerImage = q.answerImagePreview;
+                }
+                
+                // Save the question
+                const newQuestion = new Question(questionData);
+                await newQuestion.save();
+                
+                // Add to section's questions
+                newSection.questions.push(newQuestion._id);
+            }
+            
+            // Update section with questions
+            await Section.findByIdAndUpdate(newSection._id, { questions: newSection.questions });
+            
+            // Add section to test
+            existingTest.sections.push(newSection._id);
+        }
+        
+        // Final save of test with section references
+        await existingTest.save();
+        
+        // Now delete old sections and questions
+        for (const sectionId of oldSectionIds) {
+            // Delete questions linked to this section
+            await Question.deleteMany({ section_id: sectionId });
+            // Delete the section itself
+            await Section.findByIdAndDelete(sectionId);
+        }
 
         res.status(200).json({
             success: true,
-            message: 'Đã cập nhật đề thi thành công'
+            message: 'Cập nhật đề thi thành công',
+            test: existingTest
         });
     } catch (error) {
         console.error('Error updating test:', error);
         res.status(500).json({
             success: false,
-            message: 'Đã xảy ra lỗi khi cập nhật đề thi',
+            message: 'Lỗi khi cập nhật đề thi',
             error: error.message
         });
     }
