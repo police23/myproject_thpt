@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
-import './AdminDashboard.css';
-import DashboardTab from './Dashboard/DashboardTab';
-import UsersTab from './Users/UsersTab';
-import ExamsTab from './Exams/ExamsTab';
-import AnalyticsTab from './Analytics/AnalyticsTab';
-import SettingsTab from './Settings/SettingsTab';
-import ExamForm2025 from './Exams/ExamForm2025';
-import ExamPreview from './Exams/ExamPreview';
+import './AdminLayout.css';
+import DashboardTab from '../Dashboard/DashboardTab';
+import UsersTab from '../Users/UsersTab';
+import ExamsTab from '../Exams/ExamsTab';
+import AnalyticsTab from '../Analytics/AnalyticsTab';
+import SettingsTab from '../Settings/SettingsTab';
+import ExamForm2025 from '../Exams/ExamForm2025';
+import ExamPreview from '../Exams/ExamPreview';
 
-function AdminDashboard({ onLogout }) {
+function AdminLayout({ onLogout }) {
     const navigate = useNavigate();
     const location = useLocation();
     const [userList, setUserList] = useState([
@@ -95,15 +95,6 @@ function AdminDashboard({ onLogout }) {
                         <i className={`fas ${sidebarCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'}`}></i>
                     </button>
                 </div>
-                <div className="sidebar-profile">
-                    <div className="profile-avatar">
-                        <img src="https://via.placeholder.com/60" alt="Admin Avatar" />
-                    </div>
-                    <div className="profile-info">
-                        <h3>Administrator</h3>
-                        <p>Super Admin</p>
-                    </div>
-                </div>
                 <nav className="sidebar-nav">
                     <ul>
                         <li className={activeTab === 'dashboard' ? 'active' : ''} onClick={() => handleTabClick('dashboard')}>
@@ -137,12 +128,7 @@ function AdminDashboard({ onLogout }) {
                             {new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                         </h2>
                     </div>
-                    <div className="header-search">
-                        <div className="search-container">
-                            <input type="text" placeholder="Tìm kiếm..." />
-                            <button><i className="fas fa-search"></i></button>
-                        </div>
-                    </div>
+                    
                     <div className="header-right">
                         <button className="notifications">
                             <i className="fas fa-bell"></i>
@@ -203,4 +189,4 @@ function AdminDashboard({ onLogout }) {
     );
 }
 
-export default AdminDashboard;
+export default AdminLayout;

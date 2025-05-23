@@ -1,112 +1,52 @@
 const express = require('express');
 const connectDB = require('./config/db');
 require('dotenv').config();
-const mongoose = require('mongoose');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
-const cors = require('cors');
+
+// Middleware
 app.use(cors());
-connectDB(); // kết nối MongoDB
+app.use(express.json()); // Parse JSON request body
 
-app.use(express.json());
+// Connect to MongoDB
+connectDB();
 
-// Import models once at server initialization
-require('./models/Test');
+// Import models
+require('./models/TestsModel');
 require('./models/SectionsModel');
 require('./models/QuestionsModel');
 
-// Import TestController
+
+// Import controllers
 const TestController = require('./controllers/TestController');
+const LoginController = require('./controllers/LoginController');
 
-// Import routes after models
-const authRoutes = require('./routes/auth');
-const testsRoutes = require('./routes/tests');
+// Import routes
+const authRoutes = require('./routes/AuthRoutes');
+const testsRoutes = require('./routes/TestsRoutes');
+const usersRoutes = require('./routes/UsersRoutes');
 
-// Test route để kiểm tra kết nối backend
-app.get('/api/ping', (req, res) => {
-    res.json({ message: 'pong' });
-});
+// Login route
+app.post('/api/login', LoginController.login);
 
-// Route debug kiểm tra database và tìm user
-app.get('/api/debug', async (req, res) => {
-    try {
-        // Kiểm tra kết nối database
-        const dbStatus = mongoose.connection.readyState;
-        let dbStatusText = '';
-        switch (dbStatus) {
-            case 0: dbStatusText = 'Đã ngắt kết nối'; break;
-            case 1: dbStatusText = 'Đã kết nối'; break;
-            case 2: dbStatusText = 'Đang kết nối'; break;
-            case 3: dbStatusText = 'Đang ngắt kết nối'; break;
-        }
-
-        // Thử lấy danh sách user
-        const usersCount = await UserModel.countDocuments();
-
-        res.json({
-            dbStatus: dbStatusText,
-            dbConnected: dbStatus === 1,
-            usersInDB: usersCount,
-            timestamp: new Date().toISOString()
-        });
-    } catch (err) {
-        res.status(500).json({
-            message: 'Lỗi khi kiểm tra database',
-            error: err.message
-        });
-    }
-});
-
-// Cần gọi API này trước khi thử tạo test
-app.get('/api/create-collections', async (req, res) => {
-    try {
-        // Tạo collections bằng cách gọi model
-        console.log('Creating collections...');
-        await Question.createCollection();
-        await Section.createCollection();
-        await Test.createCollection();
-
-        res.json({ message: 'Collections created successfully!' });
-    } catch (err) {
-        console.error('Error creating collections:', err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// Route thêm đề thi mới
-app.post('/api/add-test', TestController.createTest);
-
-// Route lấy danh sách đề thi
-app.get('/api/list-tests', TestController.getAllTests);
-
-// Middleware để debug request body
-app.use('/api/tests', (req, res, next) => {
-    if (req.method === 'POST' || req.method === 'PUT') {
-        console.log('Test API request body:', JSON.stringify(req.body));
-    }
-    next();
-});
-
-// Đăng ký middleware
-app.use(express.json());
-app.use(cors());
-
-// Đăng ký routes
+// Register routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tests', testsRoutes);
-
-// Add additional route for getting a single test by ID if not already included in testRoutes
-app.get('/api/tests/:id', TestController.getTestById);
+app.use('/api/users', usersRoutes);
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Middleware xử lý lỗi (luôn trả về JSON)
+// Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Lỗi server:', err);
     res.status(err.status || 500).json({ message: err.message || 'Lỗi server' });
 });
 
+// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

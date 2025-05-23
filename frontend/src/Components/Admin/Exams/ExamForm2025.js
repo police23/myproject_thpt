@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify'; // Import toast
 import './ExamForm2025.css';
 import 'katex/dist/katex.min.css';
 import { BlockMath, InlineMath } from 'react-katex';
@@ -670,14 +671,12 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
             })),
             questions: form.questions
         };
-
-        // Console log để debug
-        console.log("Sending payload:", JSON.stringify(payload.structure));
         
         try {
             // If it's an edit (we have an ID), use PUT instead of POST
             const method = id ? 'PUT' : 'POST';
             const endpoint = id ? `http://localhost:5000/api/tests/${id}` : 'http://localhost:5000/api/tests';
+            const actionType = id ? 'cập nhật' : 'thêm';
 
             const res = await fetch(endpoint, {
                 method: method,
@@ -688,6 +687,17 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
             });
             const data = await res.json();
             if (data.success) {
+                // Show success toast notification
+                toast.success(`${id ? 'Cập nhật' : 'Thêm'} đề thi thành công`, {
+                    position: "top-right",
+                    autoClose: 5000,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                    progress: undefined,
+                });
+                
                 setSubmitLoading(false);
                 if (isStandalone) {
                     console.log('ExamForm2025: Submit successful, navigating back to exams list...');
@@ -697,10 +707,18 @@ function ExamForm2025({ onClose, onSubmit, initialData, isStandalone = false }) 
                     onSubmit(form);
                 }
             } else {
-                setError(data.message || 'Thao tác đề thi thất bại');
+                toast.error(`${id ? 'Cập nhật' : 'Thêm'} đề thi thất bại: ${data.message || 'Lỗi không xác định'}`, {
+                    position: "top-right",
+                    autoClose: 5000,
+                });
+                setError(data.message || `Thao tác ${actionType} đề thi thất bại`);
                 setSubmitLoading(false);
             }
         } catch (err) {
+            toast.error(`${id ? 'Cập nhật' : 'Thêm'} đề thi thất bại: Không thể kết nối tới server`, {
+                position: "top-right",
+                autoClose: 5000,
+            });
             setError('Không thể kết nối tới server');
             setSubmitLoading(false);
         }

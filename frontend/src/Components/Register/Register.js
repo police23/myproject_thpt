@@ -35,16 +35,14 @@ function Register({ switchToLogin }) {
         return null;
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Kiểm tra các trường đã được nhập đầy đủ
         if (!values.name || !values.email || !values.password || !values.confirmPassword) {
             setError('Vui lòng điền đầy đủ thông tin');
             return;
         }
 
-        // Kiểm tra mật khẩu
         const passwordError = validatePassword();
         if (passwordError) {
             setError(passwordError);
@@ -52,8 +50,26 @@ function Register({ switchToLogin }) {
         }
 
         setError('');
-        // TODO: Gửi request đăng ký tới backend ở đây
-        alert(`Đăng ký với email: ${values.email}`);
+        try {
+            const res = await fetch('http://localhost:5000/api/users/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: values.name,
+                    email: values.email,
+                    password: values.password
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                setError(data.message || 'Đăng ký thất bại');
+            } else {
+                alert('Đăng ký thành công! Vui lòng đăng nhập.');
+                switchToLogin();
+            }
+        } catch (err) {
+            setError('Không thể kết nối đến máy chủ, vui lòng thử lại sau.');
+        }
     };
 
     return (
@@ -77,7 +93,7 @@ function Register({ switchToLogin }) {
                     <form className="register-form" onSubmit={handleSubmit}>
                         <div className="form-group">
                             <div className="input-with-icon">
-                                <i className="fas fa-user"></i>
+                                {/* <i className="fas fa-user"></i> */}
                                 <input
                                     type="text"
                                     value={values.name}
@@ -90,7 +106,7 @@ function Register({ switchToLogin }) {
 
                         <div className="form-group">
                             <div className="input-with-icon">
-                                <i className="fas fa-envelope"></i>
+                                {/* <i className="fas fa-envelope"></i> */}
                                 <input
                                     type="email"
                                     value={values.email}
@@ -103,7 +119,7 @@ function Register({ switchToLogin }) {
 
                         <div className="form-group">
                             <div className="input-with-icon">
-                                <i className="fas fa-lock"></i>
+                                {/* <i className="fas fa-lock"></i> */}
                                 <input
                                     type={values.showPassword ? "text" : "password"}
                                     value={values.password}
@@ -123,7 +139,7 @@ function Register({ switchToLogin }) {
 
                         <div className="form-group">
                             <div className="input-with-icon">
-                                <i className="fas fa-lock"></i>
+                                {/* <i className="fas fa-lock"></i> */}
                                 <input
                                     type={values.showConfirmPassword ? "text" : "password"}
                                     value={values.confirmPassword}

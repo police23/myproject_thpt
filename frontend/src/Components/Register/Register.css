@@ -98,11 +98,7 @@
 }
 
 .input-with-icon i {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #aaa;
+    display: none;
 }
 
 .input-with-icon input {

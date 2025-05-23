@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
 import Login from './Components/Login/Login';
 import Register from './Components/Register/Register';
-import AdminDashboard from './Components/Admin/AdminDashboard';
-import UserDashboard from './Components/User/UserDashboard';
+import AdminLayout from './Components/Admin/Layout/AdminLayout';
+import UserLayout from './Components/User/Layout/UserLayout';
+import axios from 'axios';
 import './App.css';
+import 'react-toastify/dist/ReactToastify.css';
+
+// Set default base URL for axios
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -53,6 +59,20 @@ function App() {
   return (
     <Router>
       <div className="app">
+        {/* ToastContainer for notifications */}
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
+
         <Routes>
           <Route path="/" element={
             isLoggedIn ? (
@@ -70,12 +90,12 @@ function App() {
             )
           } />
 
-          {/* Admin routes - all nested inside AdminDashboard to maintain layout */}
+          {/* Admin routes - all nested inside AdminLayout to maintain layout */}
           <Route
             path="/admin/dashboard/*"
             element={
               isLoggedIn && currentUser?.role === 'admin' ? (
-                <AdminDashboard onLogout={handleLogout} user={currentUser} />
+                <AdminLayout onLogout={handleLogout} user={currentUser} />
               ) : (
                 <Navigate to="/" />
               )
@@ -86,7 +106,7 @@ function App() {
             path="/student/dashboard/*"
             element={
               isLoggedIn ? (
-                <UserDashboard onLogout={handleLogout} user={currentUser} />
+                <UserLayout onLogout={handleLogout} user={currentUser} />
               ) : (
                 <Navigate to="/" />
               )

@@ -18,6 +18,7 @@
     flex: 1;
     background: linear-gradient(135deg, #3a7bd5, #00d2ff);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     padding: 40px;
@@ -47,12 +48,48 @@
 .login-welcome h1 {
     font-size: 2.5rem;
     margin-bottom: 20px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    font-weight: 700;
 }
 
 .login-welcome p {
     font-size: 1.2rem;
     opacity: 0.9;
+    margin-bottom: 40px;
+}
+
+.welcome-features {
+    margin-top: 40px;
+    width: 100%;
+}
+
+.feature-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 15px;
+    border-radius: 10px;
+    backdrop-filter: blur(5px);
+    text-align: left;
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.feature-item:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-3px);
+}
+
+.feature-item i {
+    font-size: 24px;
+    margin-right: 15px;
+    width: 30px;
+    text-align: center;
+}
+
+.feature-item span {
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 .login-right-panel {
@@ -67,9 +104,9 @@
     width: 100%;
     max-width: 450px;
     background: white;
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 40px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
 }
 
 .login-logo {
@@ -80,52 +117,91 @@
 .login-logo img {
     max-width: 80px;
     margin-bottom: 15px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .login-logo h2 {
-    font-size: 1.8rem;
+    font-size: 2rem;
     color: #333;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .form-group {
-    margin-bottom: 20px;
-    /* Giảm margin xuống một chút vì không còn label */
+    margin-bottom: 24px;
 }
 
 .input-with-icon {
     position: relative;
-    margin-top: 5px;
-    /* Thêm margin-top để tạo khoảng cách với các phần tử khác */
+    display: flex;
+    align-items: center;
+    background: #f4f7fb;
+    border-radius: 12px;
+    border: 1.5px solid #e1e5eb;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    padding: 0;
+    margin-bottom: 2px;
 }
 
+.input-with-icon:focus-within {
+    border-color: #3a7bd5;
+    box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.12);
+    background: #fff;
+}
+
+/* Remove icon styles */
 .input-with-icon i {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #aaa;
+    display: none;
 }
 
 .input-with-icon input {
-    width: 100%;
-    padding: 16px 16px 16px 45px;
-    /* Tăng padding lên một chút để input cao hơn */
-    border: 1px solid #e1e5eb;
-    border-radius: 8px;
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
     font-size: 16px;
-    transition: all 0.3s;
+    padding: 15px 16px;
+    border-radius: 12px;
+    color: #222;
+    transition: background 0.3s;
+    min-width: 0;
 }
 
 .input-with-icon input::placeholder {
-    color: #aaa;
-    /* Màu cho placeholder rõ ràng hơn */
+    color: #b0b8c1;
+    opacity: 1;
+    font-size: 15px;
 }
 
 .input-with-icon input:focus {
-    border-color: #3a7bd5;
-    box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.15);
-    outline: none;
+    background: #fff;
+}
+
+.input-with-icon .toggle-password {
+    background: none;
+    border: none;
+    color: #8ca0b3;
+    font-size: 17px;
+    margin-right: 14px;
+    margin-left: 4px;
+    cursor: pointer;
+    transition: color 0.2s;
+    z-index: 2;
+}
+
+.input-with-icon .toggle-password:hover {
+    color: #3a7bd5;
 }
 
 .toggle-password {
@@ -137,13 +213,18 @@
     transform: translateY(-50%);
     cursor: pointer;
     color: #888;
+    transition: color 0.3s;
+}
+
+.toggle-password:hover {
+    color: #3a7bd5;
 }
 
 .form-options {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 30px;
     font-size: 14px;
 }
 
@@ -155,101 +236,12 @@
 .remember-me input {
     margin-right: 8px;
     accent-color: #3a7bd5;
+    width: 16px;
+    height: 16px;
 }
 
-.forgot-password {
-    color: #3a7bd5;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s;
-}
-
-.forgot-password:hover {
-    color: #0056b3;
-    text-decoration: underline;
-}
-
-.login-button {
-    width: 100%;
-    padding: 14px;
-    background: linear-gradient(to right, #3a7bd5, #00d2ff);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 500;
+.remember-me label {
     cursor: pointer;
-    transition: all 0.3s;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 10px rgba(58, 123, 213, 0.25);
-}
-
-.login-button:hover {
-    background: linear-gradient(to right, #2e6bc0, #00bfe8);
-    transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(58, 123, 213, 0.3);
-}
-
-.demo-button {
-    width: 100%;
-    padding: 12px;
-    background: #95a5a6;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s;
-    margin-bottom: 20px;
-}
-
-.demo-button:hover {
-    background: #7f8c8d;
-}
-
-.register-option {
-    text-align: center;
-    color: #666;
-}
-
-.register-option a {
-    color: #3a7bd5;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s;
-}
-
-.register-option a:hover {
-    color: #0056b3;
-    text-decoration: underline;
-}
-
-.error {
-    color: #e74c3c;
-    margin-bottom: 16px;
-    text-align: center;
-    background-color: rgba(231, 76, 60, 0.1);
-    padding: 10px;
-    border-radius: 6px;
-    font-size: 14px;
-}
-
-.link-button {
-    background: none;
-    border: none;
-    padding: 0;
-    color: #3a7bd5;
-    text-decoration: none;
-    font-weight: 500;
-    cursor: pointer;
-    margin-left: 5px;
-    font-size: inherit;
-}
-
-.link-button:hover {
-    color: #0056b3;
-    text-decoration: underline;
 }
 
 .forgot-password-btn {
@@ -261,11 +253,86 @@
     font-weight: 500;
     cursor: pointer;
     font-size: inherit;
+    transition: color 0.2s;
 }
 
 .forgot-password-btn:hover {
     color: #0056b3;
     text-decoration: underline;
+}
+
+.login-button {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(to right, #3a7bd5, #00d2ff);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(58, 123, 213, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-button i {
+    margin-right: 8px;
+}
+
+.login-button:hover {
+    background: linear-gradient(to right, #2e6bc0, #00bfe8);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(58, 123, 213, 0.3);
+}
+
+.login-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.register-option {
+    text-align: center;
+    color: #666;
+    margin-top: 10px;
+}
+
+.register-option p {
+    font-size: 15px;
+}
+
+.link-button {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #3a7bd5;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 5px;
+    font-size: inherit;
+    transition: color 0.2s;
+}
+
+.link-button:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+.error {
+    color: #e74c3c;
+    margin-bottom: 20px;
+    text-align: center;
+    background-color: rgba(231, 76, 60, 0.1);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    border-left: 4px solid #e74c3c;
 }
 
 /* Responsive design */
@@ -275,14 +342,43 @@
     }
 
     .login-left-panel {
+        padding: 40px 20px;
+    }
+    
+    .welcome-features {
         display: none;
     }
 
     .login-right-panel {
-        padding: 20px;
+        padding: 30px 20px;
     }
 
     .login-form-container {
-        padding: 25px;
+        padding: 30px 25px;
+        max-width: 500px;
+    }
+}
+
+@media (max-width: 576px) {
+    .login-left-panel {
+        padding: 30px 15px;
+    }
+    
+    .login-welcome h1 {
+        font-size: 2rem;
+    }
+    
+    .login-welcome p {
+        font-size: 1rem;
+    }
+    
+    .login-form-container {
+        padding: 25px 20px;
+    }
+    
+    .form-options {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
     }
 }

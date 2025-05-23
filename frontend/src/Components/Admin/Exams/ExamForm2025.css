@@ -1298,3 +1298,32 @@
     font-family: monospace;
     font-size: 12px;
 }
+
+/* Style for add question button */
+.add-q-btn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 16px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e6f2fe 100%);
+    border: 1px dashed #4361ee;
+    border-radius: 10px;
+    color: #4361ee;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.add-q-btn:hover {
+    background: linear-gradient(135deg, #e6f2fe 0%, #dbeafe 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.12);
+}
+
+.add-q-btn i {
+    font-size: 16px;
+}

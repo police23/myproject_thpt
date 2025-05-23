@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import './ExamsTab.css';
 import ExamForm2025 from './ExamForm2025';
 
 function ExamsTab() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [showForm, setShowForm] = useState(false);
 
     // Thêm state cho danh sách đề thi
@@ -13,7 +15,7 @@ function ExamsTab() {
     const [error, setError] = useState(null);
 
     // Fetch danh sách đề thi khi component mount
-    useEffect(() => {
+    const fetchExams = () => {
         setLoading(true);
         fetch('http://localhost:5000/api/tests') // Sửa lại URL này cho đúng backend
             .then(res => res.json())
@@ -29,7 +31,12 @@ function ExamsTab() {
                 setError('Lỗi kết nối server');
                 setLoading(false);
             });
-    }, []);
+    };
+
+    // Re-fetch when component mounts or when location changes (which happens after navigation)
+    useEffect(() => {
+        fetchExams();
+    }, [location]);
 
     const handleAddExam = () => {
         console.log('ExamsTab: Navigating to new exam form...');
@@ -69,6 +76,36 @@ function ExamsTab() {
         const previewPath = `/admin/dashboard/exams/preview/${examId}`;
         console.log(`ExamsTab: Navigating to preview exam: ${previewPath}`);
         navigate(previewPath);
+    };
+
+    const handleDeleteExam = async (examId) => {
+        if (window.confirm('Bạn có chắc chắn muốn xóa đề thi này?')) {
+            try {
+                const response = await fetch(`http://localhost:5000/api/tests/${examId}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    toast.success('Xóa đề thi thành công', {
+                        position: "top-right",
+                        autoClose: 5000,
+                    });
+                    // Refresh the list
+                    fetchExams();
+                } else {
+                    toast.error(`Xóa đề thi thất bại: ${data.message || 'Lỗi không xác định'}`, {
+                        position: "top-right",
+                        autoClose: 5000,
+                    });
+                }
+            } catch (err) {
+                toast.error('Không thể kết nối tới server', {
+                    position: "top-right",
+                    autoClose: 5000,
+                });
+            }
+        }
     };
 
     return (
@@ -148,7 +185,7 @@ function ExamsTab() {
                                             <i className="fas fa-eye"></i>
                                         </button>
                                         <button className="btn-edit" onClick={() => handleEditExam(exam._id)}><i className="fas fa-edit"></i></button>
-                                        <button className="btn-delete"><i className="fas fa-trash-alt"></i></button>
+                                        <button className="btn-delete" onClick={() => handleDeleteExam(exam._id)}><i className="fas fa-trash-alt"></i></button>
                                     </td>
                                 </tr>
                             ))
