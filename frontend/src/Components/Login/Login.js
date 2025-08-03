@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import './Login.css';
 import logo from '../../assets/logo.svg';
 import { useNavigate } from 'react-router-dom';
+import { loginUser } from '../../services/UserService';
+import ForgotPassword from './ForgotPassword';
 
 function Login({ switchToRegister, onLogin }) {
     const navigate = useNavigate();
@@ -13,6 +15,9 @@ function Login({ switchToRegister, onLogin }) {
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    // Forgot password state
+    const [showForgot, setShowForgot] = useState(false);
 
     const handleChange = (prop) => (e) => {
         const value = prop === 'rememberMe' ? e.target.checked : e.target.value;
@@ -32,36 +37,22 @@ function Login({ switchToRegister, onLogin }) {
         setError('');
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:5000/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: values.email, password: values.password })
-            });
-
-            let data = {};
-            const contentType = res.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                data = await res.json();
-            } else {
-                data.message = await res.text();
-            }
-
-            if (!res.ok) {
+            const data = await loginUser(values.email, values.password);
+            if (!data.success) {
                 setError(data.message || 'Đăng nhập thất bại');
             } else {
                 if (typeof onLogin === 'function') {
                     onLogin(data.user);
                 } else {
-                    console.log('Đăng nhập thành công:', data.user);
                     localStorage.setItem('user', JSON.stringify(data.user));
                 }
             }
         } catch (err) {
-            console.error('Lỗi khi đăng nhập:', err);
             setError('Không thể kết nối đến máy chủ, vui lòng thử lại sau.');
         }
         setLoading(false);
     };
+
 
     return (
         <div className="login-container">
@@ -90,83 +81,76 @@ function Login({ switchToRegister, onLogin }) {
                 <div className="login-form-container">
                     <div className="login-logo">
                         <img src={logo} alt="Logo" />
-                        <h2>Đăng nhập</h2>
+                        <h2>{showForgot ? 'Quên mật khẩu' : 'Đăng nhập'}</h2>
                     </div>
+                    {showForgot ? (
+                        <ForgotPassword onBack={() => setShowForgot(false)} />
+                    ) : (
+                        <>
+                            {error && <div className="error">{error}</div>}
+                            <form className="login-form" onSubmit={handleSubmit}>
+                                <div className="form-group">
+                                    <div className="input-with-icon">
+                                        <input
+                                            type="email"
+                                            value={values.email}
+                                            onChange={handleChange('email')}
+                                            placeholder="Địa chỉ email của bạn"
+                                            required
+                                        />
+                                    </div>
+                                </div>
 
-                    {error && <div className="error">{error}</div>}
+                                <div className="form-group">
+                                    <div className="input-with-icon">
+                                        <input
+                                            type={values.showPassword ? "text" : "password"}
+                                            value={values.password}
+                                            onChange={handleChange('password')}
+                                            placeholder="Mật khẩu của bạn"
+                                            required
+                                        />
+                                        <button
+                                            type="button"
+                                            className="toggle-password"
+                                            onClick={toggleShowPassword}
+                                        >
+                                            <i className={`fas ${values.showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                                        </button>
+                                    </div>
+                                </div>
 
-                    <form className="login-form" onSubmit={handleSubmit}>
-                        <div className="form-group">
-                            <div className="input-with-icon">
-                                {/* <i className="fas fa-envelope"></i> */}
-                                <input
-                                    type="email"
-                                    value={values.email}
-                                    onChange={handleChange('email')}
-                                    placeholder="Địa chỉ email của bạn"
-                                    required
-                                />
-                            </div>
-                        </div>
+                                <div className="form-options">
+                                    <button
+                                        type="button"
+                                        className="forgot-password-btn"
+                                        onClick={() => setShowForgot(true)}
+                                    >
+                                        Quên mật khẩu?
+                                    </button>
+                                </div>
 
-                        <div className="form-group">
-                            <div className="input-with-icon">
-                                {/* <i className="fas fa-lock"></i> */}
-                                <input
-                                    type={values.showPassword ? "text" : "password"}
-                                    value={values.password}
-                                    onChange={handleChange('password')}
-                                    placeholder="Mật khẩu của bạn"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    className="toggle-password"
-                                    onClick={toggleShowPassword}
-                                >
-                                    <i className={`fas ${values.showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                                <button type="submit" className="login-button" disabled={loading}>
+                                    {loading ? 
+                                        <><i className="fas fa-spinner fa-spin"></i> Đang xử lý...</> : 
+                                        <><i className="fas fa-sign-in-alt"></i> Đăng nhập</>
+                                    }
                                 </button>
-                            </div>
-                        </div>
 
-                        <div className="form-options">
-                            <div className="remember-me">
-                                <input
-                                    type="checkbox"
-                                    id="rememberMe"
-                                    checked={values.rememberMe}
-                                    onChange={handleChange('rememberMe')}
-                                />
-                                <label htmlFor="rememberMe">Nhớ mật khẩu</label>
-                            </div>
-                            <button
-                                type="button"
-                                className="forgot-password-btn"
-                                onClick={() => alert("Tính năng quên mật khẩu đang được phát triển")}
-                            >
-                                Quên mật khẩu?
-                            </button>
-                        </div>
-
-                        <button type="submit" className="login-button" disabled={loading}>
-                            {loading ? 
-                                <><i className="fas fa-spinner fa-spin"></i> Đang xử lý...</> : 
-                                <><i className="fas fa-sign-in-alt"></i> Đăng nhập</>
-                            }
-                        </button>
-
-                        <div className="register-option">
-                            <p>Chưa có tài khoản?
-                                <button
-                                    type="button"
-                                    className="link-button"
-                                    onClick={switchToRegister}
-                                >
-                                    Đăng ký ngay
-                                </button>
-                            </p>
-                        </div>
-                    </form>
+                                <div className="register-option">
+                                    <p>Chưa có tài khoản?
+                                        <button
+                                            type="button"
+                                            className="link-button"
+                                            onClick={switchToRegister}
+                                        >
+                                            Đăng ký ngay
+                                        </button>
+                                    </p>
+                                </div>
+                            </form>
+                        </>
+                    )}
                 </div>
             </div>
         </div>

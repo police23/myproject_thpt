@@ -1,13 +1,18 @@
+import ViewBlog from './Components/User/Blog/ViewBlog';
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import Login from './Components/Login/Login';
 import Register from './Components/Register/Register';
-import AdminLayout from './Components/Admin/Layout/AdminLayout';
-import UserLayout from './Components/User/Layout/UserLayout';
+import AdminPanel from './Components/Admin/Panel/AdminPanel';
+import UserPanel from './Components/User/Panel/UserPanel';
+import TestTaking from './Components/User/Test/TestTaking/TestTaking';
+import TestReview from './Components/User/Test/TestReview/TestReview';
 import axios from 'axios';
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
+import AddBlog from './Components/Admin/Blog/AddBlog/AddBlog';
+import { AuthProvider } from './context/AuthContext';
 
 // Set default base URL for axios
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -57,67 +62,150 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="app">
-        {/* ToastContainer for notifications */}
-        <ToastContainer
-          position="top-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="light"
-        />
-
-        <Routes>
-          <Route path="/" element={
-            isLoggedIn ? (
-              <Navigate to={currentUser?.role === 'admin' ? '/admin/dashboard' : '/student/dashboard'} />
-            ) : (
-              showLogin ? (
-                <Login
-                  switchToRegister={switchToRegister}
-                  onLogin={handleLogin}
-                  loginAsAdmin={loginAsAdmin}
-                />
-              ) : (
-                <Register switchToLogin={switchToLogin} onRegister={handleLogin} />
-              )
-            )
-          } />
-
-          {/* Admin routes - all nested inside AdminLayout to maintain layout */}
-          <Route
-            path="/admin/dashboard/*"
-            element={
-              isLoggedIn && currentUser?.role === 'admin' ? (
-                <AdminLayout onLogout={handleLogout} user={currentUser} />
-              ) : (
-                <Navigate to="/" />
-              )
-            }
+    <AuthProvider>
+      <Router>
+        <div className="app">
+          {/* ToastContainer for notifications */}
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
           />
 
-          <Route
-            path="/student/dashboard/*"
-            element={
+          <Routes>
+            <Route path="/" element={
               isLoggedIn ? (
-                <UserLayout onLogout={handleLogout} user={currentUser} />
+                <Navigate to={currentUser?.role === 'admin' ? '/admin/dashboard' : '/student/dashboard'} />
               ) : (
-                <Navigate to="/" />
+                showLogin ? (
+                  <Login
+                    switchToRegister={switchToRegister}
+                    onLogin={handleLogin}
+                    loginAsAdmin={loginAsAdmin}
+                  />
+                ) : (
+                  <Register switchToLogin={switchToLogin} onRegister={handleLogin} />
+                )
               )
-            }
-          />
+            } />
 
-          {/* Thêm Route cho not found */}
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </div>
-    </Router>
+            
+            <Route
+              path="/admin/*"
+              element={
+                isLoggedIn && currentUser?.role === 'admin' ? (
+                  <AdminPanel onLogout={handleLogout} user={currentUser} />
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
+            />
+
+            {/* Update path for taking exams */}
+            <Route
+              path="/student/test-taking/:id"
+              element={
+                isLoggedIn ? (
+                  <TestTaking />
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
+            />
+
+            {/* Route for reviewing exam results */}
+            <Route
+              path="/student/test-review/:id"
+              element={
+                isLoggedIn ? (
+                  <TestReview />
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
+            />
+
+
+            {/* Các route cho từng tab của UserPanel */}
+            <Route
+              path="/student/dashboard"
+              element={
+                isLoggedIn ? (
+                  <UserPanel onLogout={handleLogout} user={currentUser} />
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
+            />
+            <Route
+              path="/student/exams"
+              element={
+                isLoggedIn ? (
+                  <UserPanel onLogout={handleLogout} user={currentUser} />
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
+            />
+            <Route
+              path="/student/results"
+              element={
+                isLoggedIn ? (
+                  <UserPanel onLogout={handleLogout} user={currentUser} />
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
+            />
+
+            <Route
+              path="/student/profile"
+              element={
+                isLoggedIn ? (
+                  <UserPanel onLogout={handleLogout} user={currentUser} />
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
+            />
+
+
+            {/* Route cho tab Blog */}
+            <Route
+              path="/student/blogs"
+              element={
+                isLoggedIn ? (
+                  <UserPanel onLogout={handleLogout} user={currentUser} />
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
+            />
+
+            {/* Route xem chi tiết blog */}
+            <Route
+              path="/blog/:id"
+              element={<ViewBlog />}
+            />
+
+            {/* Route thêm blog */}
+            <Route path="/admin/blogs/new" element={<AddBlog />} />
+            {/* Route chỉnh sửa blog */}
+            <Route path="/admin/blogs/edit/:id" element={<AddBlog />} />
+
+            {/* Thêm Route cho not found */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

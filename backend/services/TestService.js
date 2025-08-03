@@ -1,9 +1,9 @@
 const Test = require('../models/TestsModel');
 const Section = require('../models/SectionsModel');
 const Question = require('../models/QuestionsModel');
+const Result = require('../models/ResultsModel');
 const mongoose = require('mongoose');
 
-// Helper function to handle file uploads
 const handleFileUpload = async (file) => {
     return file ? `/uploads/${Date.now()}-${file.originalname}` : null;
 };
@@ -11,7 +11,6 @@ const handleFileUpload = async (file) => {
 exports.createTest = async (testData) => {
     const { name, subject, duration, status, note, structure, questions } = testData;
 
-    // Create the test first
     const test = new Test({
         title: name,
         subject,
@@ -23,7 +22,6 @@ exports.createTest = async (testData) => {
     
     await test.save();
 
-    // Group questions by type
     const questionsByType = {};
     questions.forEach(q => {
         if (!questionsByType[q.type]) {
@@ -32,11 +30,9 @@ exports.createTest = async (testData) => {
         questionsByType[q.type].push(q);
     });
 
-    // Process each section in structure
     for (const sectionData of structure) {
         if (parseInt(sectionData.num) <= 0) continue;
         
-        // Create a new section
         const newSection = new Section({
             title: sectionData.section,
             type: sectionData.type,
@@ -48,11 +44,9 @@ exports.createTest = async (testData) => {
         
         await newSection.save();
         
-        // Get questions for this section type
         const sectionQuestions = questionsByType[sectionData.type] || [];
         const sectionQuestionCount = Math.min(parseInt(sectionData.num) || 0, sectionQuestions.length);
         
-        // Create questions for this section
         for (let i = 0; i < sectionQuestionCount; i++) {
             const q = sectionQuestions[i];
             
@@ -76,7 +70,7 @@ exports.createTest = async (testData) => {
                 questionData.optionImages = q.optionImagePreviews || [];
             } else if (q.type === 'tuluan') {
                 questionData.correct_answer = q.answer || '';
-                questionData.answerImage = q.answerImagePreview;
+                
             }
             
             // Save the question
@@ -94,7 +88,6 @@ exports.createTest = async (testData) => {
         test.sections.push(newSection._id);
     }
     
-    // Final save of test with section references
     await test.save();
 
     return test;
@@ -216,7 +209,7 @@ exports.updateTest = async (testId, updateData) => {
                 questionData.optionImages = q.optionImagePreviews || [];
             } else if (q.type === 'tuluan') {
                 questionData.correct_answer = q.answer || '';
-                questionData.answerImage = q.answerImagePreview;
+                
             }
             
             // Save the question
@@ -268,3 +261,265 @@ exports.deleteTest = async (testId) => {
     await Test.findByIdAndDelete(testId);
     return true;
 };
+
+
+exports.submitExam = async ({ examId, answers, userId, timeSpent }) => {
+    
+    const test = await Test.findById(examId).populate({
+        path: 'sections',
+        populate: { path: 'questions' }
+    });
+    
+
+    let total_score = 0;
+    let answersArr = [];
+    let section_scores = [];
+    
+    for (const section of test.sections) {
+        let sectionScore = 0;
+        for (const q of section.questions) {
+            let qScore = section.pointsPerQuestion || 1;
+            let userAnswer, isCorrect = false;
+            // Lấy key là _id của câu hỏi
+            const qid = q._id.toString();
+            
+            if (q.type === 'tracnghiem') {
+                userAnswer = answers[qid];
+                isCorrect = (userAnswer !== undefined && userAnswer === parseInt(q.correct_answer));
+                if (isCorrect) sectionScore += qScore;
+            } else if (q.type === 'dungsai') {
+                let n = (q.options || []).length;
+                let corrects = q.answers || [];
+                let correctCount = 0;
+                let userArr = [];
+                for (let i = 0; i < n; i++) {
+                    let userVal = answers[`${qid}-${i}`];
+                    userArr.push(userVal);
+                    if (userVal === corrects[i]) correctCount++;
+                }
+                let percent = 0;
+                if (n > 0) {
+                    if (correctCount === n) percent = 1;
+                    else if (correctCount === n - 1) percent = 0.5;
+                    else percent = 0;
+                }
+                sectionScore += Math.round(qScore * percent * 100) / 100;
+                userAnswer = userArr.join(',');
+                isCorrect = (percent === 1);
+            } else if (q.type === 'tuluan') {
+                userAnswer = answers[qid];
+                // So sánh số, không phải chuỗi
+                const correct = parseFloat(q.correct_answer);
+                const user = parseFloat(userAnswer);
+                isCorrect = !isNaN(correct) && !isNaN(user) && Math.abs(correct - user) < 1e-6;
+                if (isCorrect) sectionScore += qScore;
+            }
+
+            answersArr.push({
+                section_id: section._id,
+                question_id: q._id,
+                user_answer: userAnswer,
+                is_correct: isCorrect
+            });
+        }
+        section_scores.push({ section_id: section._id, score: sectionScore });
+        total_score = total_score + sectionScore;
+    }
+    
+    // Always create a new result to preserve history
+    const endTime = new Date();
+    
+    const timeTakenInSeconds = timeSpent || (test.duration * 60);
+    
+    const safeTotalScore = typeof total_score === 'number' && !isNaN(total_score) ? total_score : 0;
+    
+    // Always create a new result to preserve test history
+    const result = new Result({
+        test_id: examId,
+        user_id: userId,
+        answers: answersArr,
+        section_scores: section_scores,
+        total_score: safeTotalScore,
+        status: 'submitted',
+        time_taken: timeTakenInSeconds,
+        start_time: new Date(endTime.getTime() - (timeTakenInSeconds * 1000)),
+        end_time: endTime,
+        created_at: new Date()
+    });
+    
+    // Explicitly set total_score using mongoose set method
+    result.set('total_score', safeTotalScore);
+    await result.save();
+    
+    // Prepare details with proper formatting for frontend
+    const details = answersArr.map((a, idx) => {
+        // Find the question object from the test
+        let questionObj;
+        for (const section of test.sections) {
+            const question = section.questions.find(q => q._id.toString() === a.question_id.toString());
+            if (question) {
+                questionObj = question;
+                break;
+            }
+        }
+        
+        return {
+            question: questionObj || a.question_id,
+            yourAnswer: a.user_answer,
+            correctAnswer: a.is_correct ? a.user_answer : (questionObj?.correct_answer || ''),
+            score: a.is_correct ? 1 : 0
+        };
+    });
+    
+    // Trả về kết quả cho frontend
+    return {
+        _id: result._id,
+        score: total_score,
+        total: test.sections.reduce((sum, section) => sum + (section.questions?.length || 0), 0),
+        time_taken: timeTakenInSeconds,
+        details: details
+    };
+};
+
+exports.getStudentResults = async (userId) => {
+    if (!userId) throw new Error('Thiếu userId');
+    
+    try {
+        // Find all results for this user, populate test details
+        const results = await Result.find({ user_id: userId })
+            .populate('test_id')
+            .sort({ created_at: -1 });
+        
+        return {
+            success: true,
+            results: results
+        };
+    } catch (error) {
+        throw new Error(`Lỗi khi tải kết quả: ${error.message}`);
+    }
+};
+
+exports.getStudentResultByTestId = async (testId, userId) => {
+    if (!testId) throw new Error('Thiếu testId');
+    if (!userId) throw new Error('Thiếu userId');
+    
+    try {
+        // Fetch the complete test with all sections and questions
+        const fullTest = await Test.findById(testId).populate({
+            path: 'sections',
+            populate: { path: 'questions' }
+        });
+        
+        if (!fullTest) {
+            throw new Error('Không tìm thấy dữ liệu đề thi đầy đủ');
+        }
+        
+        // Find a specific result by test ID and user ID
+        const result = await Result.findOne({ 
+            test_id: testId, 
+            user_id: userId 
+        }).populate({
+            path: 'answers.question_id',
+            model: 'Question'
+        });
+        
+        if (!result) {
+            throw new Error('Không tìm thấy kết quả bài thi');
+        }
+        
+        // Explicitly attach the full test data to the result
+        result.test_id = fullTest;
+        
+        // Make sure section types are properly set for each question
+        if (fullTest.sections && Array.isArray(fullTest.sections)) {
+            fullTest.sections.forEach(section => {
+                if (section && section.questions && Array.isArray(section.questions)) {
+                    section.questions.forEach(question => {
+                        // Ensure each question has a type property
+                        if (!question.type && section.type) {
+                            question.type = section.type;
+                        }
+                    });
+                }
+            });
+        }
+        
+        return {
+            success: true,
+            result: result
+        };
+    } catch (error) {
+        throw new Error(`Lỗi khi tải kết quả: ${error.message}`);
+    }
+};
+
+exports.getStudentResultByResultId = async (resultId, userId) => {
+    if (!resultId) throw new Error('Thiếu resultId');
+    if (!userId) throw new Error('Thiếu userId');
+    
+    try {
+        // First fetch the test details from the result
+        const basicResult = await Result.findOne({
+            _id: resultId,
+            user_id: userId
+        }).populate('test_id');
+        
+        if (!basicResult) {
+            throw new Error('Không tìm thấy kết quả bài thi hoặc bạn không có quyền truy cập');
+        }
+        
+        // Get the test ID to fetch complete test data
+        const testId = basicResult.test_id?._id;
+        if (!testId) {
+            throw new Error('Không tìm thấy thông tin đề thi');
+        }
+        
+        // Fetch the complete test with all sections and questions
+        const fullTest = await Test.findById(testId).populate({
+            path: 'sections',
+            populate: { path: 'questions' }
+        });
+        
+        if (!fullTest) {
+            throw new Error('Không tìm thấy dữ liệu đề thi đầy đủ');
+        }
+        
+        // Now fetch the result with user's answers
+        const result = await Result.findOne({ 
+            _id: resultId, 
+            user_id: userId 
+        }).populate({
+            path: 'answers.question_id',
+            model: 'Question'
+        });
+        
+        if (!result) {
+            throw new Error('Không tìm thấy kết quả bài thi hoặc bạn không có quyền truy cập');
+        }
+        
+        // Explicitly attach the full test data to the result
+        result.test_id = fullTest;
+        
+        // Make sure section types are properly set for each question
+        if (fullTest.sections && Array.isArray(fullTest.sections)) {
+            fullTest.sections.forEach(section => {
+                if (section && section.questions && Array.isArray(section.questions)) {
+                    section.questions.forEach(question => {
+                        // Ensure each question has a type property
+                        if (!question.type && section.type) {
+                            question.type = section.type;
+                        }
+                    });
+                }
+            });
+        }
+        
+        return {
+            success: true,
+            result: result
+        };
+    } catch (error) {
+        throw new Error(`Lỗi khi tải kết quả: ${error.message}`);
+    }
+};
+

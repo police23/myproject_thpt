@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/UsersModel');
+const bcrypt = require('bcryptjs');
+const User = require('../models/UserModel');
 
 // Hàm tạo JWT token
 exports.generateToken = (userId) => {
@@ -14,8 +15,6 @@ exports.generateToken = (userId) => {
 exports.protect = async (req, res, next) => {
     try {
         let token;
-        
-        // Kiểm tra token từ header
         if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
             token = req.headers.authorization.split(' ')[1];
         }
@@ -47,11 +46,8 @@ exports.protect = async (req, res, next) => {
     }
 };
 
-// Middleware kiểm tra mật khẩu
+
 exports.verifyPassword = async (plainPassword, hashedPassword) => {
-    // Nếu sử dụng bcrypt
-    // return await bcrypt.compare(plainPassword, hashedPassword);
-    
-    // Tạm thời so sánh trực tiếp như trong controller ban đầu
-    return plainPassword === hashedPassword;
+    // Sử dụng bcrypt để so sánh mật khẩu
+    return await bcrypt.compare(plainPassword, hashedPassword);
 };

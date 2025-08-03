@@ -5,15 +5,15 @@ const fs = require('fs');
 // Cấu hình lưu trữ
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const uploadDir = path.join(__dirname, '../uploads');
-        // Tạo thư mục nếu không tồn tại
+        // Lưu file vào thư mục uploads ở root workspace
+        const workspaceRoot = path.resolve(__dirname, '../../');
+        const uploadDir = path.join(workspaceRoot, 'uploads');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
         cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        // Tạo tên file độc nhất
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
