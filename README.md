@@ -1,4 +1,4 @@
-# MyProject THPT
+# High School Exam Prep App
 
 ## Table of Contents
 - [Description](#description)
@@ -15,7 +15,7 @@
 - [License](#license)
 
 ## Description
-MyProject THPT is a full-stack web application built to support Vietnamese high school students in their learning journey. It provides features such as user authentication, online tests, study time tracking, blog management, and real-time statistics. Administrators can manage content, view detailed usage analytics, and moderate user activities.
+High School Exam Prep App is a full-stack web application built to support Vietnamese high school students in their learning journey. It provides features such as user authentication, online tests, study time tracking, blog management, and real-time statistics. Administrators can manage content, view detailed usage analytics, and moderate user activities.
 
 ## Features
 - User registration and JWT-based authentication
