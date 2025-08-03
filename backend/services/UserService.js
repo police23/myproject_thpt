@@ -1,5 +1,4 @@
-const User = require('../models/UsersModel');
-// Lấy danh sách user mới đăng ký (mặc định lấy 5 user gần nhất)
+const User = require('../models/UserModel');
 const getRecentUsers = async (limit = 5) => {
     return await User.find({})
         .sort({ created_at: -1 })

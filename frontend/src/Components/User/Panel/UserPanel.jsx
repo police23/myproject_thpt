@@ -4,7 +4,6 @@ import TestsTab from '../Test/TestPage/TestsPage';
 import TestResults from '../Test/TestResult/TestResults';
 import UserProfile from '../Profile/UserProfile';
 import UserDashboard from '../Dashboard/UserDashboard';
-import BlogList from '../Blog/BlogList.js';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './UserPanel.css';
 function UserLayout({ onLogout }) {
@@ -103,7 +102,7 @@ function UserLayout({ onLogout }) {
         if (pathname.endsWith('/dashboard')) return 'dashboard';
         if (pathname.endsWith('/exams')) return 'exams';
         if (pathname.endsWith('/results')) return 'results';
-        if (pathname.endsWith('/blogs')) return 'blogs';
+        // ...existing code...
         if (pathname.endsWith('/profile')) return 'profile';
         return 'dashboard';
     };
@@ -132,7 +131,6 @@ function UserLayout({ onLogout }) {
         if (tab === 'exams') path = '/student/exams';
         else if (tab === 'results') path = '/student/results';
         else if (tab === 'profile') path = '/student/profile';
-        else if (tab === 'blogs') path = '/student/blogs';
         navigate(path);
     };
 
@@ -170,9 +168,6 @@ function UserLayout({ onLogout }) {
                         </li>
                         <li className={activeTab === 'results' ? 'active' : ''} onClick={() => handleTabClick('results')}>
                             <i className="fas fa-chart-line"></i> <span>Kết quả học tập</span>
-                        </li>
-                        <li className={activeTab === 'blogs' ? 'active' : ''} onClick={() => handleTabClick('blogs')}>
-                            <i className="fas fa-blog"></i> <span>Blog</span>
                         </li>
                         <li className={activeTab === 'profile' ? 'active' : ''} onClick={() => handleTabClick('profile')}>
                             <i className="fas fa-user"></i> <span>Thông tin tài khoản</span>
@@ -228,30 +223,23 @@ function UserLayout({ onLogout }) {
                                             const dateObj = new Date(time);
                                             const dateStr = dateObj.toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' });
                                             const timeStr = dateObj.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-                                            const blogId = n.blogId;
                                             const testId = n.testId;
-                                            const isBlog = !!blogId;
                                             const isTest = !!testId;
                                             let itemClass = 'notification-item';
-                                            if (isBlog) itemClass += ' blog';
-                                            else if (isTest) itemClass += ' test';
+                                            if (isTest) itemClass += ' test';
                                             return (
                                                 <li
                                                     key={idx}
-                                                    tabIndex={isBlog || isTest ? 0 : -1}
-                                                    role={isBlog || isTest ? 'button' : undefined}
+                                                    tabIndex={isTest ? 0 : -1}
+                                                    role={isTest ? 'button' : undefined}
                                                     className={itemClass}
-                                                    onClick={isBlog ? (e) => { setShowDropdown(false); navigate(`/blog/${blogId}`); }
-                                                        : isTest ? (e) => { setShowDropdown(false); navigate(`/test/${testId}`); }
+                                                    onClick={isTest ? (e) => { setShowDropdown(false); navigate(`/test/${testId}`); }
                                                         : undefined}
-                                                    onKeyDown={isBlog ? (e) => { if (e.key === 'Enter' || e.key === ' ') { setShowDropdown(false); navigate(`/blog/${blogId}`); } }
-                                                        : isTest ? (e) => { if (e.key === 'Enter' || e.key === ' ') { setShowDropdown(false); navigate(`/test/${testId}`); } }
+                                                    onKeyDown={isTest ? (e) => { if (e.key === 'Enter' || e.key === ' ') { setShowDropdown(false); navigate(`/test/${testId}`); } }
                                                         : undefined}
                                                 >
                                                     <div className="notification-icon">
-                                                        {isBlog ? (
-                                                            <i className="fas fa-blog"></i>
-                                                        ) : isTest ? (
+                                                        {isTest ? (
                                                             <i className="fas fa-file-alt"></i>
                                                         ) : (
                                                             <i className="fas fa-bell"></i>
@@ -295,12 +283,6 @@ function UserLayout({ onLogout }) {
                             <TestResults />
                         </div>
                     )}
-                    {activeTab === 'blogs' && (
-                        <div className="blogs-content">
-                            <BlogList />
-                        </div>
-                    )}
-
                     {activeTab === 'profile' && (
                         <div className="profile-content">
                             <UserProfile />

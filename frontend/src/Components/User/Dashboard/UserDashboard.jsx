@@ -34,6 +34,7 @@ function UserDashboard() {
         timeSpent: 0
     });
 
+
     const [recentExams, setRecentExams] = useState([]);
     
     // State cho mục tiêu học tập
@@ -279,10 +280,7 @@ function UserDashboard() {
 
     return (
         <div className="dashboard-content">
-            <h1 className="content-title">Bảng điều khiển</h1>
-            
-            
-            
+            <h1 className="content-title">Bảng điều khiển</h1> 
             <div className="user-content-row single-column">
                 <div className="user-section learning-progress full-width">
                     <div className="section-header">

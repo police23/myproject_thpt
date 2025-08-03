@@ -1,5 +1,3 @@
-
-const StudyTime = require('../models/StudyTimeModel');
 const startStudySession = async (userId) => {
     try {
         const today = new Date();

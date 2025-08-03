@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 
 const testSchema = new mongoose.Schema({
-    title: String, // Exam name
+    title: String, 
     subject: String,
     description: String,
-    duration: { type: Number, default: 90 }, // Time in minutes
+    duration: { type: Number, default: 90 },
     status: { type: String, enum: ['public', 'draft'], default: 'draft' },
-    note: String, // Additional notes
+    note: String,
     numQuestions: { type: Number, default: 0 },
     created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     sections: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Section' }],

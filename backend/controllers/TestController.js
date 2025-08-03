@@ -2,15 +2,12 @@ const TestService = require('../services/TestService');
 
 exports.createTest = async (req, res) => {
     try {
-        // Nếu có file ảnh, lấy đường dẫn
         let imagePath = null;
         if (req.file) {
             imagePath = `/uploads/${req.file.filename}`;
         }
-        // Truyền imagePath vào testData
         const testData = { ...req.body, image: imagePath };
         const test = await TestService.createTest(testData);
-        // Gửi thông báo realtime cho tất cả user
         const { sendNotificationToAll } = require('../socket');
         sendNotificationToAll({
             title: 'Có đề thi mới',
@@ -125,13 +122,12 @@ exports.deleteTest = async (req, res) => {
     }
 };
 
-// Nộp bài, chấm điểm, trả về kết quả chi tiết
 exports.submitExam = async (req, res) => {
     try {
         const { examId, answers, timeSpent } = req.body;
         const userId = req.user?._id || req.body.userId || null;
         
-        
+
         const result = await TestService.submitExam({ examId, answers, userId, timeSpent });
         return res.json({ success: true, result });
     } catch (err) {
@@ -207,4 +203,3 @@ exports.getResultByResultId = async (req, res) => {
         });
     }
 };
-

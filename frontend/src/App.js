@@ -1,6 +1,4 @@
-import ViewBlog from './Components/User/Blog/ViewBlog';
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import Login from './Components/Login/Login';
 import Register from './Components/Register/Register';
@@ -11,8 +9,8 @@ import TestReview from './Components/User/Test/TestReview/TestReview';
 import axios from 'axios';
 import './App.css';
 import 'react-toastify/dist/ReactToastify.css';
-import AddBlog from './Components/Admin/Blog/AddBlog/AddBlog';
 import { AuthProvider } from './context/AuthContext';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Set default base URL for axios
 axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -63,7 +61,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
+      <BrowserRouter>
         <div className="app">
           {/* ToastContainer for notifications */}
           <ToastContainer
@@ -177,34 +175,12 @@ function App() {
             />
 
 
-            {/* Route cho tab Blog */}
-            <Route
-              path="/student/blogs"
-              element={
-                isLoggedIn ? (
-                  <UserPanel onLogout={handleLogout} user={currentUser} />
-                ) : (
-                  <Navigate to="/" />
-                )
-              }
-            />
-
-            {/* Route xem chi tiết blog */}
-            <Route
-              path="/blog/:id"
-              element={<ViewBlog />}
-            />
-
-            {/* Route thêm blog */}
-            <Route path="/admin/blogs/new" element={<AddBlog />} />
-            {/* Route chỉnh sửa blog */}
-            <Route path="/admin/blogs/edit/:id" element={<AddBlog />} />
 
             {/* Thêm Route cho not found */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </div>
-      </Router>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

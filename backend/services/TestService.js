@@ -1,7 +1,7 @@
-const Test = require('../models/TestsModel');
-const Section = require('../models/SectionsModel');
-const Question = require('../models/QuestionsModel');
-const Result = require('../models/ResultsModel');
+const Test = require('../models/TestModel');
+const Section = require('../models/SectionModel');
+const Question = require('../models/QuestionModel');
+const Result = require('../models/ResultModel');
 const mongoose = require('mongoose');
 
 const handleFileUpload = async (file) => {
@@ -59,7 +59,6 @@ exports.createTest = async (testData) => {
                 image: q.imagePreview
             };
             
-            // Add type-specific fields
             if (q.type === 'tracnghiem') {
                 questionData.options = q.options || [];
                 questionData.correct_answer = q.answer?.toString() || '0';
@@ -73,18 +72,13 @@ exports.createTest = async (testData) => {
                 
             }
             
-            // Save the question
             const newQuestion = new Question(questionData);
             await newQuestion.save();
             
-            // Add to section's questions
             newSection.questions.push(newQuestion._id);
         }
         
-        // Update section with questions
         await Section.findByIdAndUpdate(newSection._id, { questions: newSection.questions });
-        
-        // Add section to test
         test.sections.push(newSection._id);
     }
     
@@ -113,14 +107,14 @@ exports.getTestById = async (testId) => {
         return null;
     }
     
-    // Make sure all sections have valid questions array
+    
     if (test.sections) {
         for (let i = 0; i < test.sections.length; i++) {
             if (!test.sections[i].questions) {
                 test.sections[i].questions = [];
             }
             
-            // If questions don't exist in this section, try to find them by section_id
+            // Nếu không có câu hỏi nào trong section, lấy từ cơ sở dữ liệu
             if (test.sections[i].questions.length === 0) {
                 const sectionQuestions = await Question.find({ section_id: test.sections[i]._id });
                 test.sections[i].questions = sectionQuestions;
@@ -142,7 +136,6 @@ exports.updateTest = async (testId, updateData) => {
     // First, get all existing section IDs to delete later
     const oldSectionIds = [...existingTest.sections];
     
-    // Clear sections from test
     existingTest.sections = [];
     
     // Update test basic info
@@ -154,7 +147,6 @@ exports.updateTest = async (testId, updateData) => {
     existingTest.numQuestions = questions.length;
     existingTest.updatedAt = new Date();
     
-    // Save test to get reference
     await existingTest.save();
     
     // Group questions by type
@@ -181,11 +173,9 @@ exports.updateTest = async (testId, updateData) => {
         
         await newSection.save();
         
-        // Get questions for this section type
         const sectionQuestions = questionsByType[sectionData.type] || [];
         const sectionQuestionCount = Math.min(parseInt(sectionData.num) || 0, sectionQuestions.length);
         
-        // Create questions for this section
         for (let i = 0; i < sectionQuestionCount; i++) {
             const q = sectionQuestions[i];
             
@@ -198,7 +188,7 @@ exports.updateTest = async (testId, updateData) => {
                 image: q.imagePreview
             };
             
-            // Add type-specific fields
+            
             if (q.type === 'tracnghiem') {
                 questionData.options = q.options || [];
                 questionData.correct_answer = q.answer?.toString() || '0';
@@ -211,23 +201,18 @@ exports.updateTest = async (testId, updateData) => {
                 questionData.correct_answer = q.answer || '';
                 
             }
-            
-            // Save the question
+       
             const newQuestion = new Question(questionData);
             await newQuestion.save();
-            
-            // Add to section's questions
+
             newSection.questions.push(newQuestion._id);
         }
-        
-        // Update section with questions
+
         await Section.findByIdAndUpdate(newSection._id, { questions: newSection.questions });
-        
-        // Add section to test
+
         existingTest.sections.push(newSection._id);
     }
     
-    // Final save of test with section references
     await existingTest.save();
     
     // Now delete old sections and questions
@@ -248,7 +233,6 @@ exports.deleteTest = async (testId) => {
         return false;
     }
 
-    // Delete all questions in all sections
     for (const sectionId of test.sections) {
         const section = await Section.findById(sectionId);
         if (section) {
@@ -326,14 +310,14 @@ exports.submitExam = async ({ examId, answers, userId, timeSpent }) => {
         total_score = total_score + sectionScore;
     }
     
-    // Always create a new result to preserve history
+    
     const endTime = new Date();
     
     const timeTakenInSeconds = timeSpent || (test.duration * 60);
     
     const safeTotalScore = typeof total_score === 'number' && !isNaN(total_score) ? total_score : 0;
     
-    // Always create a new result to preserve test history
+    
     const result = new Result({
         test_id: examId,
         user_id: userId,
@@ -522,4 +506,3 @@ exports.getStudentResultByResultId = async (resultId, userId) => {
         throw new Error(`Lỗi khi tải kết quả: ${error.message}`);
     }
 };
-

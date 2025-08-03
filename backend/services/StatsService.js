@@ -1,5 +1,5 @@
 const UsersModel = require('../models/UserModel');
-const ResultsModel = require('../models/ResultsModel');
+const ResultsModel = require('../models/ResultModel');
 const VisitsCounter = require('../models/VisitsCounter');
 
 const getStatsData = async () => {

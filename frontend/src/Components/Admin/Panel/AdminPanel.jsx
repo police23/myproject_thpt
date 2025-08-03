@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import './AdminPanel.css';
 import Dashboard from '../Dashboard/AdminDashboard';
-import AddBlog from '../Blog/AddBlog/AddBlog';
 import UserManagement from '../Users/UserManagement';
 import TestManagement from '../Tests/TestManagement/TestManagement';
 import AddTest from '../Tests/AddTest/AddTest';
 import TestPreview from '../Tests/TestPreview/TestPreview';
-import BlogManagement from '../Blog/BlogManagement/BlogManagement';
 import AccountSettings from '../AccountSettings/AccountSettings';
 function AdminLayout({ onLogout }) {
     const navigate = useNavigate();
@@ -19,7 +17,6 @@ function AdminLayout({ onLogout }) {
         const path = location.pathname;
         if (path.includes('/admin/users')) return 'users';
         if (path.includes('/admin/tests')) return 'tests';
-        if (path.includes('/admin/blogs')) return 'blogs';
         if (path.includes('/admin/settings')) return 'settings';
         return 'dashboard';
     };
@@ -60,9 +57,6 @@ function AdminLayout({ onLogout }) {
             case 'tests':
                 navigate('/admin/tests');
                 break;
-            case 'blogs':
-                navigate('/admin/blogs');
-                break;
             case 'settings':
                 navigate('/admin/settings');
                 break;
@@ -98,9 +92,6 @@ function AdminLayout({ onLogout }) {
                             </li>
                             <li className={activeTab === 'tests' ? 'active' : ''} onClick={() => handleTabClick('tests')}>
                                 <i className="fas fa-file-alt"></i> <span>Quản lý đề thi</span>
-                            </li>
-                            <li className={activeTab === 'blogs' ? 'active' : ''} onClick={() => handleTabClick('blogs')}>
-                                <i className="fas fa-blog"></i> <span>Quản lý blog</span>
                             </li>
                             <li className={activeTab === 'settings' ? 'active' : ''} onClick={() => handleTabClick('settings')}>
                                 <i className="fas fa-cog"></i> <span>Cài đặt tài khoản</span>
@@ -139,17 +130,14 @@ function AdminLayout({ onLogout }) {
                         </div>
                     ) : (
                         <Routes>
-                            <Route path="/" element={<Navigate to="/admin/blogs" replace />} />
                             <Route path="/dashboard" element={<Dashboard />} />
                             <Route path="/users" element={<UserManagement />} />
                             <Route path="/tests" element={<TestManagement />} />
                             <Route path="/tests/new" element={<AddTest isStandalone={true} />} />
                             <Route path="/tests/edit/:id" element={<AddTest isStandalone={true} />} />
                             <Route path="/tests/preview/:id" element={<TestPreview />} />
-                            <Route path="/blogs/*" element={<BlogManagement />} />
-                            <Route path="/blogs/new" element={<AddBlog />} />
                             <Route path="/settings" element={<AccountSettings />} />
-                            <Route path="*" element={<Navigate to="/admin/blogs" replace />} />
+                            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
                         </Routes>
                     )}
                 </div>

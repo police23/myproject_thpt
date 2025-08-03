@@ -26,3 +26,10 @@ export const deleteTest = async (id) => {
     const res = await axios.delete(`${API_URL}/${id}`);
     return res.data;
 };
+
+export const getUserTestStats = async (userId) => {
+    const res = await axios.get(`${API_URL}/userTestStats`, {
+        params: { userId }
+    });
+    return res.data;
+};
